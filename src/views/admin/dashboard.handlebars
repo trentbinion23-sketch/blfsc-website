@@ -1,0 +1,63 @@
+<div class="page-header">
+  <h2>Dashboard</h2>
+  <p>Welcome back, <strong>{{user}}</strong>. Here's an overview of your site.</p>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{userCount}}</div>
+    <div class="stat-label">Total Users</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color: var(--success);">Online</div>
+    <div class="stat-label">System Status</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Recent Activity</span>
+    {{#if isAdmin}}
+    <a href="/admin/audit-log" class="btn btn-secondary btn-sm">View Full Log</a>
+    {{/if}}
+  </div>
+  {{#if recentActivity.length}}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Details</th>
+          <th>IP Address</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each recentActivity}}
+        <tr>
+          <td><code style="font-size:.8rem; color: var(--accent);">{{this.action}}</code></td>
+          <td style="color: var(--text-muted);">{{this.details}}</td>
+          <td style="color: var(--text-muted);">{{this.ip_address}}</td>
+          <td style="color: var(--text-muted); font-size:.8rem;">{{this.created_at}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p class="text-muted" style="padding: 1rem 0;">No activity recorded yet.</p>
+  {{/if}}
+</div>
+
+{{#if isAdmin}}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Quick Actions</span>
+  </div>
+  <div style="display:flex; gap:.75rem; flex-wrap:wrap;">
+    <a href="/admin/users/new" class="btn btn-primary">&#43; Create User</a>
+    <a href="/admin/users" class="btn btn-secondary">&#128100; Manage Users</a>
+    <a href="/admin/audit-log" class="btn btn-secondary">&#128203; Audit Log</a>
+  </div>
+</div>
+{{/if}}

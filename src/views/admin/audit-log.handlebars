@@ -1,0 +1,44 @@
+<div class="page-header">
+  <h2>Audit Log</h2>
+  <p>A chronological record of all administrative actions. ({{total}} total entries)</p>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Details</th>
+          <th>IP Address</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each logs}}
+        <tr>
+          <td style="color:var(--text-muted); font-size:.8rem;">{{this.id}}</td>
+          <td><strong>{{this.username}}</strong></td>
+          <td><code style="font-size:.8rem; color: var(--accent);">{{this.action}}</code></td>
+          <td style="color: var(--text-muted); font-size:.85rem;">{{this.details}}</td>
+          <td style="color: var(--text-muted); font-size:.8rem;">{{this.ip_address}}</td>
+          <td style="color: var(--text-muted); font-size:.8rem;">{{this.created_at}}</td>
+        </tr>
+        {{/each}}
+        {{#unless logs.length}}
+        <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:2rem;">No audit log entries yet.</td></tr>
+        {{/unless}}
+      </tbody>
+    </table>
+  </div>
+
+  {{#if totalPages}}
+  <div class="pagination">
+    {{#if prevPage}}<a href="/admin/audit-log?page={{prevPage}}">&larr; Prev</a>{{/if}}
+    <span class="current">Page {{currentPage}} of {{totalPages}}</span>
+    {{#if nextPage}}<a href="/admin/audit-log?page={{nextPage}}">Next &rarr;</a>{{/if}}
+  </div>
+  {{/if}}
+</div>

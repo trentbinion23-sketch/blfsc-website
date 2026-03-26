@@ -1,0 +1,59 @@
+<div class="page-header">
+  <h2>{{title}}</h2>
+  <p>{{#if editUser}}Update user details and permissions.{{else}}Add a new user to the admin panel.{{/if}}</p>
+</div>
+
+{{#if error}}
+<div class="alert alert-error">{{error}}</div>
+{{/if}}
+
+<div class="card" style="max-width: 560px;">
+  <form method="POST" action="{{#if editUser}}/admin/users/{{editUser.id}}/edit{{else}}/admin/users/new{{/if}}" novalidate>
+    {{#unless editUser}}
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required minlength="3" maxlength="32"
+             pattern="[a-zA-Z0-9_]+" placeholder="letters, numbers, underscores" />
+    </div>
+    {{/unless}}
+
+    {{#if editUser}}
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" value="{{editUser.username}}" disabled style="opacity:.6;" />
+    </div>
+    {{/if}}
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" value="{{#if editUser}}{{editUser.email}}{{/if}}" required />
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password{{#if editUser}} (leave blank to keep current){{/if}}</label>
+      <input type="password" id="password" name="password" {{#unless editUser}}required{{/unless}}
+             minlength="8" autocomplete="new-password" placeholder="Min 8 characters" />
+    </div>
+
+    <div class="form-group">
+      <label for="role">Role</label>
+      <select id="role" name="role" required>
+        <option value="member" {{#if editUser}}{{#ifEquals editUser.role "member"}}selected{{/ifEquals}}{{/if}}>Member</option>
+        <option value="editor" {{#if editUser}}{{#ifEquals editUser.role "editor"}}selected{{/ifEquals}}{{/if}}>Editor</option>
+        <option value="admin"  {{#if editUser}}{{#ifEquals editUser.role "admin"}}selected{{/ifEquals}}{{/if}}>Admin</option>
+      </select>
+    </div>
+
+    {{#if editUser}}
+    <div class="form-group" style="display:flex; align-items:center; gap:.5rem;">
+      <input type="checkbox" id="is_active" name="is_active" {{#if editUser.is_active}}checked{{/if}} />
+      <label for="is_active" style="margin:0; text-transform:none; letter-spacing:0;">Active account</label>
+    </div>
+    {{/if}}
+
+    <div style="display:flex; gap:.75rem; margin-top:1.5rem;">
+      <button type="submit" class="btn btn-primary">{{#if editUser}}Save Changes{{else}}Create User{{/if}}</button>
+      <a href="/admin/users" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>

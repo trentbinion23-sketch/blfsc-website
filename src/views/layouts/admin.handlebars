@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{title}} | BLFSC Admin</title>
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>BLFSC</h1>
+      <span>Admin Panel</span>
+    </div>
+    <nav>
+      <div class="nav-section">General</div>
+      <a href="/admin/dashboard" {{#if isDashboard}}class="active"{{/if}}>
+        &#9632; Dashboard
+      </a>
+
+      {{#if isAdmin}}
+      <div class="nav-section">Administration</div>
+      <a href="/admin/users" {{#if isUsers}}class="active"{{/if}}>
+        &#128100; User Management
+      </a>
+      <a href="/admin/audit-log" {{#if isAudit}}class="active"{{/if}}>
+        &#128203; Audit Log
+      </a>
+      {{/if}}
+
+      <div class="nav-section">Account</div>
+      <a href="/admin/change-password" {{#if isChangePassword}}class="active"{{/if}}>
+        &#128274; Change Password
+      </a>
+      <a href="/" target="_blank">&#127760; View Website</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <strong>{{user}}</strong>
+        <span class="role-badge {{role}}">{{role}}</span>
+      </div>
+      <form method="POST" action="/admin/logout">
+        <button type="submit" class="btn btn-secondary btn-block btn-sm">Sign Out</button>
+      </form>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    {{{body}}}
+  </main>
+</body>
+</html>

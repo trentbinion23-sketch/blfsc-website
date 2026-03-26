@@ -1,0 +1,62 @@
+<div class="page-header">
+  <h2>User Management</h2>
+  <p>Manage who has access to the admin panel and their roles.</p>
+</div>
+
+{{#if success}}
+<div class="alert alert-success">{{success}}</div>
+{{/if}}
+{{#if error}}
+<div class="alert alert-error">{{error}}</div>
+{{/if}}
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">All Users ({{users.length}})</span>
+    <a href="/admin/users/new" class="btn btn-primary btn-sm">&#43; New User</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Last Login</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each users}}
+        <tr>
+          <td><strong>{{this.username}}</strong></td>
+          <td style="color: var(--text-muted);">{{this.email}}</td>
+          <td><span class="role-badge {{this.role}}">{{this.role}}</span></td>
+          <td>
+            <span class="status-dot {{#if this.is_active}}active{{else}}inactive{{/if}}"></span>
+            {{#if this.is_active}}Active{{else}}Inactive{{/if}}
+          </td>
+          <td style="color: var(--text-muted); font-size:.8rem;">{{#if this.last_login}}{{this.last_login}}{{else}}Never{{/if}}</td>
+          <td style="color: var(--text-muted); font-size:.8rem;">{{this.created_at}}</td>
+          <td>
+            <div class="actions">
+              <a href="/admin/users/{{this.id}}/edit" class="btn btn-secondary btn-sm">Edit</a>
+              <form method="POST" action="/admin/users/{{this.id}}/toggle" style="display:inline;">
+                <button type="submit" class="btn btn-secondary btn-sm">
+                  {{#if this.is_active}}Deactivate{{else}}Activate{{/if}}
+                </button>
+              </form>
+              <form method="POST" action="/admin/users/{{this.id}}/delete" style="display:inline;"
+                    onsubmit="return confirm('Delete user {{this.username}}? This cannot be undone.')">
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+</div>
