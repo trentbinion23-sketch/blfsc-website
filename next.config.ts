@@ -11,6 +11,7 @@ const allowCloudflareInsights = process.env.CSP_ALLOW_CLOUDFLARE_INSIGHTS === "t
 const connectSrcParts = [
   "'self'",
   "https://*.supabase.co",
+  "wss://*.supabase.co",
   "https://us.i.posthog.com",
   "https://*.posthog.com",
   "https://*.sentry.io",

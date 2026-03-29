@@ -376,6 +376,37 @@ function clearAuthMessage() {
   els.authMessage.className = "portal-alert hidden";
 }
 
+/** Maps network/CORS-style failures to something actionable (raw message is often "Failed to fetch"). */
+function formatSignInError(error) {
+  const raw = String(error?.message || error || "");
+  const lower = raw.toLowerCase();
+  const blocked =
+    lower.includes("failed to fetch") ||
+    lower.includes("networkerror") ||
+    lower.includes("network request failed") ||
+    lower.includes("load failed") ||
+    error?.name === "AuthRetryableFetchError";
+  if (blocked) {
+    let altOrigin = "";
+    try {
+      const canon = new URL(PUBLIC_SITE_URL);
+      const altHost = canon.host.startsWith("www.")
+        ? canon.host.replace(/^www\./, "")
+        : `www.${canon.host}`;
+      altOrigin = `${canon.protocol}//${altHost}`;
+    } catch {
+      altOrigin = "the other hostname (www vs non-www)";
+    }
+    return (
+      "Could not reach the sign-in service (request blocked or network error). " +
+      `Try signing in from ${altOrigin}/portal if you are on the opposite hostname, pause VPN or strict privacy/ad blockers, ` +
+      "and in Supabase → Project Settings → API allow requests from your live site origins (both www and non-www). " +
+      "If it still fails, contact the club."
+    );
+  }
+  return raw || "Sign-in failed.";
+}
+
 function setChatStatus(message, isError = false) {
   els.chatStatus.textContent = message;
   els.chatStatus.className = `portal-chat-status${isError ? " is-error" : ""}`;
@@ -3209,7 +3240,7 @@ async function handleSignIn(event) {
   btn.textContent = "Access members area";
   if (error) {
     track("portal_signin_failed", { reason: error.message || "unknown" });
-    showAuthMessage(error.message, true);
+    showAuthMessage(formatSignInError(error), true);
     return;
   }
   track("portal_signin_success", { email_domain: email.split("@")[1] || "unknown" });
