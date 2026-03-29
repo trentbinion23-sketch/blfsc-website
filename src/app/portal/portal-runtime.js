@@ -2883,7 +2883,7 @@ async function loadMemberProfile() {
   } else if (bootstrapResult && typeof bootstrapResult === "object") {
     console.info("ensure_bootstrap_portal_admin:", bootstrapResult);
     if (bootstrapResult.skipped && bootstrapResult.reason === "email_not_allowlisted") {
-      bootstrapDiagnostic = ` Admin unlock skipped: database saw sign-in email "${bootstrapResult.resolved_email || "?"}", which is not the allowlisted owner address. Use the exact allowlisted email in Supabase Auth, or add your address to NEXT_PUBLIC_PORTAL_BOOTSTRAP_ADMIN_EMAILS / the migration allowlist.`;
+      bootstrapDiagnostic = ` Admin unlock skipped: database saw sign-in email "${bootstrapResult.resolved_email || "?"}", which is not the allowlisted owner address. Use the exact owner email configured by NEXT_PUBLIC_PORTAL_OWNER_EMAIL (and matching migration allowlist entry).`;
     } else if (bootstrapResult.ok === false && bootstrapResult.detail) {
       bootstrapDiagnostic = ` Admin unlock failed: ${bootstrapResult.detail}`;
     } else if (bootstrapResult.ok === false && bootstrapResult.reason === "no_email") {
