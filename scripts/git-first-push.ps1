@@ -6,7 +6,8 @@ param(
   [switch]$Force
 )
 
-$ErrorActionPreference = "Stop"
+# Continue: git writes to stderr when origin is missing; we only check $LASTEXITCODE.
+$ErrorActionPreference = "Continue"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $repoRoot.Path
