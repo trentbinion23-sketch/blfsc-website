@@ -73,7 +73,7 @@
     "start-server-and-test": "^3.0.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.1",
+    "vitest": "^4.1.2",
     "wrangler": "^4.77.0"
   }
 }
