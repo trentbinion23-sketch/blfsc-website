@@ -7,10 +7,16 @@ describe("media helpers", () => {
     );
   });
 
-  it("leaves canonical and remote image paths alone", () => {
+  it("rewrites heavy legacy image aliases to optimized variants", () => {
     expect(normalizeSiteImagePath("/images/blfsc-logo.png", "/images/fallback.png")).toBe(
-      "/images/blfsc-logo.png",
+      "/images/blfsc-logo.webp",
     );
+    expect(normalizeSiteImagePath("/images/storm-website.png", "/images/fallback.png")).toBe(
+      "/images/storm-website.webp",
+    );
+  });
+
+  it("leaves other canonical and remote image paths alone", () => {
     expect(
       normalizeSiteImagePath(
         "https://tudfdpmrkreucubdtuay.supabase.co/storage/v1/object/public/merch-images/item.png",

@@ -13,7 +13,7 @@ type ProductRow = {
   image?: string | null;
 };
 
-const productFallbackImage = "/images/blfsc-logo.png";
+const productFallbackImage = "/images/blfsc-logo.webp";
 const publicProductsRevalidateSeconds = 60;
 
 function slugify(value: string) {

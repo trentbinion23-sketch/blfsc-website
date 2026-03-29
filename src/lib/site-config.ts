@@ -26,7 +26,7 @@ export const posthogHost = readEnv(
 );
 
 export const siteAssets = {
-  logo: "/images/blfsc-logo.png",
+  logo: "/images/blfsc-logo.webp",
   wordmark: "/images/blf-wordmark.svg",
   rhinoMark: "/images/blf-rhino-mark.png",
   stormVisual: "/images/storm-website.webp",

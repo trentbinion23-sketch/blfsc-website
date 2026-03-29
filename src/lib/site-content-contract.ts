@@ -155,7 +155,7 @@ export const siteContentAdvancedKeys = [
 
 type SiteContentAdvancedKey = (typeof siteContentAdvancedKeys)[number];
 
-const defaultEventImage = "/images/blfsc-logo.png";
+const defaultEventImage = "/images/blfsc-logo.webp";
 
 export const siteContentDefaults: SiteContent = {
   announcement: {
@@ -375,7 +375,7 @@ export const siteContentDefaults: SiteContent = {
         "A relaxed Friday night catch-up for members, supporters, and riders keen to meet the club properly.",
       description:
         "The social night keeps the club side of BLFSC moving, with time for ride talk, event plans, merch updates, and meeting new faces without the pressure of a full run day.",
-      image: "/images/blfsc-logo.png",
+      image: "/images/blfsc-logo.webp",
       featured: true,
     },
     {
@@ -420,7 +420,7 @@ export const siteContentDefaults: SiteContent = {
         "A recent club night with merch pick-ups, event planning, and time to catch up off the bike.",
       description:
         "A practical off-bike night for club updates, merch collection, and getting the next run sheet locked in before the colder months set in.",
-      image: "/images/blfsc-logo.png",
+      image: "/images/blfsc-logo.webp",
       featured: false,
     },
   ],

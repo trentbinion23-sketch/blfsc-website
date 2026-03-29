@@ -1,5 +1,10 @@
 const imageFilePattern = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
-const stormVisualAliases = new Set(["storm-website.png", "images/storm-website.png"]);
+const imageAliases = new Map([
+  ["storm-website.png", "/images/storm-website.webp"],
+  ["images/storm-website.png", "/images/storm-website.webp"],
+  ["blfsc-logo.png", "/images/blfsc-logo.webp"],
+  ["images/blfsc-logo.png", "/images/blfsc-logo.webp"],
+]);
 
 export function normalizeSiteImagePath(value: string | null | undefined, fallback: string) {
   const raw = String(value || "").trim();
@@ -9,14 +14,15 @@ export function normalizeSiteImagePath(value: string | null | undefined, fallbac
     return raw;
   }
 
-  if (raw.startsWith("/images/")) {
-    return raw;
-  }
-
   const cleaned = raw.replace(/^\.?\/*/, "");
   if (!cleaned) return fallback;
-  if (stormVisualAliases.has(cleaned.toLowerCase())) {
-    return "/images/storm-website.webp";
+  const aliased = imageAliases.get(cleaned.toLowerCase());
+  if (aliased) {
+    return aliased;
+  }
+
+  if (raw.startsWith("/images/")) {
+    return raw;
   }
 
   if (cleaned.startsWith("images/")) {
