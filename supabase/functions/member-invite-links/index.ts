@@ -22,6 +22,7 @@ type InviteResult = {
   phone?: string;
   status: "ready" | "exists" | "error";
   action_link?: string;
+  email_sent?: boolean;
   note?: string;
   error?: string;
   sms_status?: "sent" | "skipped" | "failed";
@@ -336,58 +337,98 @@ Deno.serve(
 
       for (const recipient of validRecipients) {
         const email = recipient.email;
-        const response = await fetch(`${supabaseUrl}/auth/v1/admin/generate_link`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${serviceRoleKey}`,
-            apikey: serviceRoleKey,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            type: "invite",
-            email,
-            redirect_to: redirectTo,
-            data: {
-              invited_by: senderProfile.email,
-              invite_source: "portal_admin",
+        const invitePayload = {
+          invited_by: senderProfile.email,
+          invite_source: "portal_admin",
+        };
+
+        const { error: inviteUserError } = await supabase.auth.admin.inviteUserByEmail(
+          email,
+          redirectTo ? { redirectTo, data: invitePayload } : { data: invitePayload },
+        );
+
+        const emailSent = !inviteUserError;
+        const hasPhone = Boolean(String(recipient.phone || "").trim());
+        const needInviteLink = hasPhone || !emailSent;
+
+        let actionLink = "";
+        if (needInviteLink) {
+          const response = await fetch(`${supabaseUrl}/auth/v1/admin/generate_link`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${serviceRoleKey}`,
+              apikey: serviceRoleKey,
+              "Content-Type": "application/json",
             },
-          }),
-        });
-
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          const message = String(
-            (payload as Record<string, unknown>).msg ||
-              (payload as Record<string, unknown>).error_description ||
-              (payload as Record<string, unknown>).error ||
-              "Invite generation failed.",
-          );
-
-          results.push({
-            email,
-            phone: recipient.phone || undefined,
-            status: classifyInviteError(message),
-            error: message,
-            note: "Review this member before sending another invite.",
+            body: JSON.stringify({
+              type: "invite",
+              email,
+              redirect_to: redirectTo,
+              data: invitePayload,
+            }),
           });
-          continue;
-        }
 
-        const actionLink = extractActionLink(payload as Record<string, unknown>);
-        if (!actionLink) {
-          results.push({
-            email,
-            phone: recipient.phone || undefined,
-            status: "error",
-            error: "Supabase did not return an invite link for this email.",
-          });
-          continue;
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            const message = String(
+              (payload as Record<string, unknown>).msg ||
+                (payload as Record<string, unknown>).error_description ||
+                (payload as Record<string, unknown>).error ||
+                "Invite generation failed.",
+            );
+
+            if (emailSent && hasPhone) {
+              results.push({
+                email,
+                phone: recipient.phone || undefined,
+                status: "ready",
+                email_sent: true,
+                note: "Supabase emailed this invitation, but a link for SMS could not be generated. The member can use the email.",
+                sms_status: "failed",
+                sms_error: message,
+              });
+              smsFailed += 1;
+            } else {
+              results.push({
+                email,
+                phone: recipient.phone || undefined,
+                status: classifyInviteError(message),
+                error: message,
+                note: "Review this member before sending another invite.",
+              });
+            }
+            continue;
+          }
+
+          actionLink = extractActionLink(payload as Record<string, unknown>);
+          if (!actionLink) {
+            if (emailSent && hasPhone) {
+              results.push({
+                email,
+                phone: recipient.phone || undefined,
+                status: "ready",
+                email_sent: true,
+                note: "Supabase emailed this invitation, but no link was returned for SMS. The member can use the email.",
+                sms_status: "failed",
+                sms_error: "Supabase did not return an invite link for this email.",
+              });
+              smsFailed += 1;
+            } else {
+              results.push({
+                email,
+                phone: recipient.phone || undefined,
+                status: "error",
+                error: "Supabase did not return an invite link for this email.",
+              });
+            }
+            continue;
+          }
         }
 
         let smsStatus: InviteResult["sms_status"] = recipient.phone ? "skipped" : undefined;
         let smsError = "";
 
-        if (recipient.phone) {
+        if (recipient.phone && actionLink) {
           const smsTarget = normalizePhoneNumber(recipient.phone);
           if (!smsTarget) {
             smsStatus = "failed";
@@ -414,16 +455,33 @@ Deno.serve(
           }
         }
 
+        const noteForReady = (() => {
+          if (emailSent && !actionLink) {
+            return "Supabase sent an invitation email to this member. No copy link is needed.";
+          }
+          if (emailSent && hasPhone) {
+            return smsStatus === "sent"
+              ? "Invitation emailed and invite link texted."
+              : "Invitation emailed. SMS status is shown below.";
+          }
+          if (actionLink && !emailSent) {
+            return "Automatic email was not sent (check Auth email settings or existing user). Copy the link or resend from the dashboard.";
+          }
+          if (recipient.phone) {
+            return smsStatus === "sent"
+              ? "Invite link generated and texted to the member."
+              : "Invite link generated. Text delivery needs Twilio or a valid phone number.";
+          }
+          return "Copy this invite link and send it to the member.";
+        })();
+
         results.push({
           email,
           phone: recipient.phone || undefined,
           status: "ready",
-          action_link: actionLink,
-          note: recipient.phone
-            ? smsStatus === "sent"
-              ? "Invite link generated and texted to the member."
-              : "Invite link generated. Text delivery needs Twilio or a valid phone number."
-            : "Send this invite link directly to the member.",
+          action_link: actionLink || undefined,
+          email_sent: emailSent || undefined,
+          note: noteForReady,
           sms_status: smsStatus,
           sms_error: smsError || undefined,
         });
@@ -433,6 +491,7 @@ Deno.serve(
         {
           requested: validRecipients.length,
           generated: results.filter((item) => item.status === "ready").length,
+          emails_sent: results.filter((item) => item.email_sent).length,
           invalid_emails: invalidEmails,
           invalid_phones: invalidPhones,
           redirect_to: redirectTo || null,

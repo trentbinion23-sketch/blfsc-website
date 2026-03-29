@@ -30,6 +30,8 @@
     "test:unit:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "prepare": "husky",
+    "git:login": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/gh-login.ps1",
+    "git:web": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/gh-web.ps1",
     "git:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/git-first-push.ps1",
     "git:publish:force": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/git-first-push.ps1 -Force"
   },

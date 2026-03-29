@@ -1334,9 +1334,9 @@
                     <div class="field">
                       <span class="field-label">How it works</span>
                       <div class="portal-lock-note">
-                        Invite links are generated server-side for the emails you supply. If a
-                        matching phone number is supplied and Twilio is configured, the portal will
-                        also text the link to that member.
+                        Supabase sends an invitation email to each new address (configure Auth email
+                        or SMTP in your project). If you add a matching phone and Twilio is set up,
+                        the portal texts the invite link as well.
                       </div>
                     </div>
                   </div>
@@ -1346,7 +1346,7 @@
                       class="button button-primary"
                       type="submit"
                     >
-                      Generate invite links
+                      Send invitations
                     </button>
                     <button
                       id="download-invite-links-btn"
@@ -1358,12 +1358,12 @@
                     </button>
                   </div>
                   <div id="invite-links-status" class="broadcast-status">
-                    Invite links will appear here once the admin account and invite function are
-                    configured.
+                    Results and delivery status will appear here once the admin account and invite
+                    function are configured.
                   </div>
                 </form>
                 <div id="invite-results-empty" class="portal-lock-note">
-                  Generated invite links will appear here after you run the tool.
+                  Invitation results will appear here after you run the tool.
                 </div>
                 <div id="invite-results-list" class="broadcast-list hidden"></div>
               </section>

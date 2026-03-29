@@ -2019,7 +2019,7 @@ function renderAdminDashboard() {
           ? state.inviteToolHealthy
             ? summarizeDashboardMessage(
                 els.inviteLinksStatus.textContent,
-                "Invite links were generated successfully.",
+                "Invitations were processed successfully.",
               )
             : summarizeDashboardMessage(
                 els.inviteLinksStatus.textContent,
@@ -2100,7 +2100,7 @@ function renderAdminDashboard() {
     );
   }
   if (hasAdmin && !state.inviteToolChecked) {
-    nextSteps.push("Generate one test invite link to verify the invite function is live.");
+    nextSteps.push("Send one test invitation to verify the invite function is live.");
   } else if (hasAdmin && state.inviteToolChecked && !state.inviteToolHealthy) {
     nextSteps.push(
       "Review the last invite error, fix the member-invite-links function or secrets, then retry.",
@@ -2211,11 +2211,12 @@ function normalizeInviteRecipients(emailText, phoneText) {
 function inviteCsv() {
   const escapeCsv = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
   const rows = [
-    ["email", "phone", "status", "sms_status", "invite_link", "note"],
+    ["email", "phone", "status", "email_sent", "sms_status", "invite_link", "note"],
     ...state.inviteResults.map((item) => [
       item.email,
       item.phone || "",
       item.status,
+      item.email_sent ? "yes" : "no",
       item.sms_status || "",
       item.action_link || "",
       item.error || item.note || "",
@@ -2265,7 +2266,14 @@ function renderInviteResults() {
       <div class="broadcast-item-head">
         <div>
           <strong>${escapeHtml(item.email)}</strong>
-          <div class="invite-link-meta">${escapeHtml(item.phone ? `Phone: ${item.phone}` : "Email delivery only")}</div>
+          <div class="invite-link-meta">${escapeHtml(
+            [
+              item.phone ? `Phone: ${item.phone}` : "No SMS number",
+              item.email_sent ? "Invitation email sent by Supabase" : null,
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          )}</div>
         </div>
         <span class="broadcast-chip">${escapeHtml(item.status === "ready" ? "Ready" : item.status === "exists" ? "Needs review" : "Error")}</span>
       </div>
@@ -2384,11 +2392,11 @@ function resetInviteState() {
   els.inviteResultsList.innerHTML = "";
   els.inviteResultsList.classList.add("hidden");
   els.inviteResultsEmpty.textContent =
-    "Generated invite links will appear here after you run the tool.";
+    "Invitation results will appear here after you run the tool.";
   els.inviteResultsEmpty.classList.remove("hidden");
   setInviteFormEnabled(false);
   setInviteStatus(
-    "Invite links will appear here once the admin account and invite function are configured.",
+    "Results and delivery status will appear here once the admin account and invite function are configured.",
   );
   renderAdminDashboard();
 }
@@ -3302,7 +3310,7 @@ async function handleBroadcastSubmit(event) {
 async function handleInviteSubmit(event) {
   event.preventDefault();
   if (!state.session || !state.profile?.is_admin) {
-    return showToast("Only the admin account can generate invite links.", true);
+    return showToast("Only the admin account can send member invitations.", true);
   }
 
   const { recipients, invalidEmails, invalidPhones, extraPhones } = normalizeInviteRecipients(
@@ -3337,9 +3345,9 @@ async function handleInviteSubmit(event) {
 
   const btn = els.generateInviteLinksBtn;
   btn.disabled = true;
-  btn.textContent = "Generating...";
+  btn.textContent = "Sending...";
   setInviteStatus(
-    `Generating one-time invite links for ${recipients.length} member${recipients.length === 1 ? "" : "s"}...`,
+    `Sending invitations and generating links for ${recipients.length} member${recipients.length === 1 ? "" : "s"}...`,
   );
 
   try {
@@ -3369,31 +3377,33 @@ async function handleInviteSubmit(event) {
     const smsDelivered = payload.sms_sent || 0;
     const smsSkipped = payload.sms_skipped || 0;
     const smsFailed = payload.sms_failed || 0;
+    const emailsSent = payload.emails_sent ?? 0;
     setInviteStatus(
-      `Generated ${payload.generated || 0} invite link${payload.generated === 1 ? "" : "s"} from ${payload.requested || recipients.length} requested member${recipients.length === 1 ? "" : "s"}.${smsDelivered ? ` SMS sent to ${smsDelivered} phone${smsDelivered === 1 ? "" : "s"}.` : ""}${smsSkipped ? ` SMS skipped for ${smsSkipped} phone${smsSkipped === 1 ? "" : "s"}.` : ""}${smsFailed ? ` SMS failed for ${smsFailed} phone${smsFailed === 1 ? "" : "s"}.` : ""}`,
+      `Processed ${payload.requested || recipients.length} invitation${recipients.length === 1 ? "" : "s"}: ${emailsSent} automatic invite email${emailsSent === 1 ? "" : "s"} sent, ${payload.generated || 0} row${payload.generated === 1 ? "" : "s"} ready.${smsDelivered ? ` SMS sent to ${smsDelivered} phone${smsDelivered === 1 ? "" : "s"}.` : ""}${smsSkipped ? ` SMS skipped for ${smsSkipped} phone${smsSkipped === 1 ? "" : "s"}.` : ""}${smsFailed ? ` SMS failed for ${smsFailed} phone${smsFailed === 1 ? "" : "s"}.` : ""}`,
     );
     track("portal_invite_links_generated", {
       requested: payload.requested || recipients.length,
       generated: payload.generated || 0,
+      emails_sent: emailsSent,
       sms_sent: smsDelivered,
       sms_failed: smsFailed,
     });
     renderAdminDashboard();
-    showToast("Invite links generated.");
+    showToast("Invitations processed.");
   } catch (error) {
     console.error(error);
     state.inviteResults = [];
     state.inviteToolChecked = true;
     state.inviteToolHealthy = false;
     renderInviteResults();
-    const messageText = error instanceof Error ? error.message : "Could not generate invite links.";
+    const messageText = error instanceof Error ? error.message : "Could not process invitations.";
     track("portal_invite_links_failed", { reason: messageText });
     setInviteStatus(messageText, true);
     renderAdminDashboard();
     showToast(messageText, true);
   } finally {
     btn.disabled = false;
-    btn.textContent = "Generate invite links";
+    btn.textContent = "Send invitations";
   }
 }
 

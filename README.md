@@ -16,13 +16,23 @@ Open `http://localhost:3000`.
 
 ## Publish to GitHub (Windows)
 
-One-time: `gh auth login` (install CLI with `winget install GitHub.cli` if needed). Commit your work, then from the repo root:
+GitHub CLI installs as `gh.exe` under **Program Files**. If typing `gh` in a terminal says _not recognized_, **close and reopen the terminal**, or use the npm scripts below (they resolve the full path).
+
+**One-time login** (opens the browser):
+
+```bash
+npm run git:login
+```
+
+Commit your work, then:
 
 ```bash
 npm run git:publish
 ```
 
-Creates a **private** repo named like this folder (`BLFSC-Website`), adds `origin`, and pushes `main`. If the remote already exists, it only pushes. To overwrite a divergent remote safely: `npm run git:publish:force` (`--force-with-lease`).
+Creates a **private** repo named like this folder (`BLFSC-Website`), adds `origin`, and pushes `main`. If the remote already exists, it only pushes. To overwrite a divergent remote safely: `npm run git:publish:force` (`--force-with-lease`). Open the repo in the browser: `npm run git:web`.
+
+If GitHub CLI is missing: `winget install GitHub.cli`.
 
 ## Quality checks
 
