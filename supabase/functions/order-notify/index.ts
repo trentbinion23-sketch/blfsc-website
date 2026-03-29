@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "npm:@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@6.10.1";
 import { applyRateLimit, getClientIp } from "../_shared/security.ts";
 
