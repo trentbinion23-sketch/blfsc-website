@@ -18,11 +18,13 @@ Open `http://localhost:3000`.
 
 GitHub CLI installs as `gh.exe` under **Program Files**. If typing `gh` in a terminal says _not recognized_, **close and reopen the terminal**, or use the npm scripts below (they resolve the full path).
 
-**One-time login** (opens the browser):
+**One-time login** (opens the browser via GitHub CLI — no device code):
 
 ```bash
 npm run git:login
 ```
+
+This uses **Node** to launch `gh.exe`, so it works even when `gh` or **PowerShell** is not on your PATH. If the browser does not open, run **`git:login`** from **Command Prompt** or an external terminal, not only the minimal IDE terminal.
 
 Commit your work, then:
 

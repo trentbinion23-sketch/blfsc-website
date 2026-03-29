@@ -30,7 +30,7 @@ if (-not $gh) {
 
 Write-Host ""
 Write-Host "Using: $gh" -ForegroundColor Gray
-Write-Host "Choose GitHub.com, HTTPS, then login with browser." -ForegroundColor Cyan
+Write-Host "Opening browser to sign in (GitHub.com, HTTPS)." -ForegroundColor Cyan
 Write-Host ""
 
-& $gh auth login
+& $gh auth login -h github.com -p https -w
