@@ -22,19 +22,22 @@ GitHub CLI installs as `gh.exe` under **Program Files**. If typing `gh` in a ter
 
 In **Windows PowerShell**, `npm` often runs **`npm.ps1`**, which is blocked when execution policy is **Restricted**. Pick one:
 
-1. **Easiest:** call the CMD shim (works immediately):
+1. **Easiest:** open **Command Prompt** or **PowerShell**, **go to the project folder first**, then call the CMD shim (works immediately):
 
-   ```powershell
+   ```cmd
+   cd /d "C:\Users\trent\OneDrive\Desktop\BLFSC-Website"
    npm.cmd run git:login
    npm.cmd run git:publish
    ```
 
-   Or from the repo root:
+   Or from that same folder:
 
-   ```powershell
-   .\npm-safe.cmd run git:login
-   .\npm-safe.cmd run git:publish
+   ```cmd
+   npm-safe.cmd run git:login
+   npm-safe.cmd run git:publish
    ```
+
+   If you see `ENOENT` / `Could not read package.json`, you are still in the wrong directory (for example `C:\Users\trent` instead of this repo).
 
 2. **One-time fix for your user:** allow local scripts (may require admin / org policy):
 
