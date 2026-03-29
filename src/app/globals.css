@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+:root {
+  --background: #040914;
+  --foreground: #f6f8fc;
+  --muted: #9ca9be;
+  --surface: rgba(8, 17, 31, 0.82);
+  --surface-strong: rgba(5, 12, 22, 0.94);
+  --line: rgba(146, 173, 210, 0.15);
+  --rust: #cf3d34;
+  --rust-deep: #851d18;
+  --sand: #d0a242;
+  --moss: #2d6df6;
+  --ring: rgba(45, 109, 246, 0.28);
+  --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.42);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-source-sans);
+  --font-display: var(--font-barlow);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  position: relative;
+  background:
+    radial-gradient(circle at top left, rgba(45, 109, 246, 0.22), transparent 26rem),
+    radial-gradient(circle at top right, rgba(207, 61, 52, 0.16), transparent 24rem),
+    radial-gradient(circle at 50% 0%, rgba(208, 162, 66, 0.12), transparent 18rem),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-source-sans), sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(4, 9, 20, 0.76), rgba(4, 9, 20, 0.96)),
+    url("/images/storm-website.png") center top / cover no-repeat;
+  opacity: 0.24;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 14% 16%, rgba(45, 109, 246, 0.18), transparent 26rem),
+    radial-gradient(circle at 88% 12%, rgba(208, 162, 66, 0.12), transparent 22rem),
+    radial-gradient(circle at 50% 120%, rgba(207, 61, 52, 0.12), transparent 28rem);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: rgba(45, 109, 246, 0.26);
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-barlow), sans-serif;
+    letter-spacing: 0.01em;
+  }
+
+  p,
+  li {
+    color: var(--muted);
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-space {
+    @apply py-14 sm:py-18 lg:py-24;
+  }
+
+  .card-surface {
+    @apply rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-soft)] backdrop-blur;
+    box-shadow:
+      0 24px 80px rgba(0, 0, 0, 0.42),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--sand)];
+  }
+
+  .section-title {
+    @apply text-3xl leading-none sm:text-4xl lg:text-5xl;
+  }
+
+  .section-copy {
+    @apply max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--moss),var(--rust))] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-[var(--line)] bg-white/6 px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--sand)] hover:text-white;
+  }
+
+  .btn-text {
+    @apply inline-flex items-center gap-2 text-sm font-semibold text-[var(--sand)] transition hover:text-white;
+  }
+
+  .chip-button {
+    @apply inline-flex items-center justify-center rounded-full border border-[var(--line)] bg-white/5 px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--sand)] hover:text-white;
+  }
+
+  .chip-button-active {
+    @apply border-[var(--moss)] bg-[var(--moss)] text-white hover:text-white;
+  }
+
+  .input-field {
+    @apply w-full rounded-3xl border border-[var(--line)] bg-white/6 px-4 py-3 text-[var(--foreground)] shadow-sm transition placeholder:text-white/35 focus:border-[var(--sand)] focus:outline-none;
+  }
+
+  .field-label {
+    @apply mb-2 block text-sm font-semibold text-[var(--foreground)];
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}

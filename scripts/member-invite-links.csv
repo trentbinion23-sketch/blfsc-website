@@ -1,0 +1,4 @@
+"email","status","redirect_to","action_link","user_id","invited_at","message"
+"member-one@example.com","dry_run","https://example.com/portal","","","","Validated only. No invite link was created."
+"member-three@example.com","dry_run","https://example.com/portal","","","","Validated only. No invite link was created."
+"member-two@example.com","dry_run","https://example.com/portal","","","","Validated only. No invite link was created."

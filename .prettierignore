@@ -1,0 +1,13 @@
+node_modules
+.next
+.open-next
+.wrangler
+coverage
+dist
+build
+.husky
+test-results
+archive
+.lighthouseci
+src/app/portal/portal-markup.ts
+src/app/portal/portal-source.html

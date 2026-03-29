@@ -1,0 +1,6 @@
+# Add one member email per line.
+# Lines starting with # are ignored.
+
+member-one@example.com
+member-two@example.com
+member-three@example.com

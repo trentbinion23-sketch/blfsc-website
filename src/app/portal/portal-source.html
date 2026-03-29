@@ -1,0 +1,1350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>BLFSC portal markup source</title>
+    <!-- This file only stores the route-owned body markup.
+         Metadata, CSS, and runtime are owned by the App Router files. -->
+  </head>
+  <body class="portal-body">
+    <a class="skip-link" href="#portal-main">Skip to member content</a>
+
+    <div class="portal-shell">
+      <section id="auth-screen" class="portal-auth-screen">
+        <div class="auth-layout portal-surface">
+          <div class="auth-brand-panel">
+            <a href="/" class="back-link">
+              <span aria-hidden="true">&larr;</span>
+              Back to main site
+            </a>
+
+            <div class="portal-chip">BLFSC private access</div>
+            <img src="/images/blfsc-logo.png" alt="BLFSC club logo" class="auth-logo" />
+            <h1 class="brand-font auth-title">Members only. Secure by default.</h1>
+            <p class="auth-lead">
+              Sign in to access members-only merch, club updates, profile settings, and private chat
+              in one place.
+            </p>
+
+            <div class="auth-points">
+              <article class="auth-point">
+                <strong>Members-only merch</strong>
+                <p>Shop live club gear and place orders without leaving the portal.</p>
+              </article>
+              <article class="auth-point">
+                <strong>Approved access only</strong>
+                <p>Access stays with verified member accounts so the portal stays private.</p>
+              </article>
+              <article class="auth-point">
+                <strong>Club updates</strong>
+                <p>
+                  Keep your contact details current and stay in the loop on rides, drops, and
+                  notices.
+                </p>
+              </article>
+            </div>
+          </div>
+
+          <div class="auth-form-panel">
+            <div class="portal-chip portal-chip-alt">Restricted portal</div>
+            <h2 class="brand-font auth-form-title">Enter the members area</h2>
+            <p class="auth-form-copy">
+              Use your approved member account to sign in and get straight to the members area.
+            </p>
+
+            <div id="auth-message" class="portal-alert hidden" aria-live="polite"></div>
+
+            <form id="signin-form" class="stack-form">
+              <label class="field" for="email">
+                <span class="field-label">Member email</span>
+                <input
+                  id="email"
+                  name="email"
+                  class="input"
+                  type="email"
+                  autocomplete="email username"
+                  placeholder="name@example.com"
+                  required
+                />
+              </label>
+
+              <label class="field" for="password">
+                <span class="field-label">Password</span>
+                <input
+                  id="password"
+                  name="password"
+                  class="input"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Enter password"
+                  required
+                />
+              </label>
+              <button id="signin-btn" class="button button-primary button-full" type="submit">
+                Access members area
+              </button>
+            </form>
+
+            <div class="auth-help">
+              Forgot your password? Use the recovery link sent to your email, then come back here
+              and save your new password in Account. Need access?
+              <a href="/contact">Contact the club</a>.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="member-app" class="portal-app hidden">
+        <header class="portal-header">
+          <div class="portal-header-inner">
+            <a class="brand portal-brand" href="/" aria-label="BLFSC main site">
+              <img src="/images/blfsc-logo.png" alt="BLFSC club logo" />
+              <span>
+                <strong>BLFSC</strong>
+                <em>Members Portal</em>
+              </span>
+            </a>
+
+            <div class="portal-header-summary">
+              <div class="portal-pill">
+                <span>Signed in as</span>
+                <strong id="member-email-display">Member</strong>
+              </div>
+              <div class="portal-pill">
+                <span>Cart total</span>
+                <strong id="cart-total-summary">$0.00</strong>
+              </div>
+            </div>
+
+            <div class="portal-header-actions">
+              <a href="/" class="button button-secondary">Main site</a>
+              <button
+                id="toggle-cart"
+                class="button button-secondary portal-cart-button"
+                type="button"
+              >
+                Cart
+                <span id="cart-badge" class="cart-badge hidden">0</span>
+              </button>
+              <button id="signout-btn" class="button button-danger" type="button">Sign out</button>
+            </div>
+          </div>
+        </header>
+
+        <main id="portal-main" class="portal-main">
+          <section class="portal-hero portal-surface" data-reveal>
+            <div>
+              <p class="eyebrow">Members merchandise workspace</p>
+              <h2 class="brand-font">
+                Live products, secure orders, one private place to run the drop.
+              </h2>
+              <p class="portal-copy">
+                This is the private side of BLFSC. Shop the current drop, update your details, and
+                keep on top of club notices in one clean members area.
+              </p>
+            </div>
+
+            <div class="portal-stats">
+              <article class="portal-stat">
+                <span>Products live</span>
+                <strong id="products-count">0</strong>
+              </article>
+              <article class="portal-stat">
+                <span>Items in cart</span>
+                <strong id="cart-count-inline">0</strong>
+              </article>
+              <article class="portal-stat">
+                <span>Portal access</span>
+                <strong>Protected</strong>
+              </article>
+            </div>
+          </section>
+
+          <nav class="portal-tabs" aria-label="Member sections">
+            <button class="portal-tab is-active" type="button" data-portal-tab="shop">Shop</button>
+            <button class="portal-tab" type="button" data-portal-tab="account">Account</button>
+            <button class="portal-tab" type="button" data-portal-tab="chat">Chat</button>
+            <button
+              id="admin-tab"
+              class="portal-tab is-locked"
+              type="button"
+              data-portal-tab="admin"
+              aria-disabled="true"
+              title="Admin access required"
+            >
+              Admin
+            </button>
+          </nav>
+          <div
+            id="admin-access-banner"
+            class="portal-lock-note portal-admin-access-note hidden"
+          ></div>
+
+          <section id="pane-shop" class="portal-pane is-active" data-reveal>
+            <div class="portal-pane-grid shop-layout">
+              <section class="portal-catalog">
+                <div class="portal-section-head" data-reveal>
+                  <div>
+                    <p class="eyebrow">Current drop</p>
+                    <h3 class="brand-font">Available merchandise</h3>
+                  </div>
+                  <p class="portal-section-copy">
+                    Browse live products, filter by category, and send your order from the same
+                    private workspace.
+                  </p>
+                </div>
+
+                <div
+                  class="shop-category-tabs"
+                  id="shop-category-tabs"
+                  aria-label="Merchandise categories"
+                ></div>
+                <p id="shop-summary" class="portal-shop-summary">Loading merchandise...</p>
+
+                <div id="products-loading" class="portal-state portal-surface" data-reveal>
+                  Loading merchandise...
+                </div>
+
+                <div id="products-empty" class="portal-state portal-surface hidden" data-reveal>
+                  No merch is live right now. Check back soon for the next drop.
+                </div>
+
+                <div id="product-grid" class="portal-product-grid hidden"></div>
+              </section>
+
+              <aside class="portal-sidebar">
+                <section class="portal-card portal-surface" data-reveal>
+                  <div class="portal-card-head">
+                    <p class="eyebrow">Member checklist</p>
+                    <h3 class="brand-font">Before you submit</h3>
+                  </div>
+                  <ul class="portal-checklist">
+                    <li>Confirm sizes before adding clothing items to the cart.</li>
+                    <li>Use notes for pickup, delivery, or chapter-specific instructions.</li>
+                    <li>
+                      Reset your password inside the Account tab after a Supabase recovery email.
+                    </li>
+                  </ul>
+                </section>
+
+                <section class="portal-card portal-surface" data-reveal>
+                  <div class="portal-card-head">
+                    <p class="eyebrow">Your history</p>
+                    <h3 class="brand-font">Recent orders</h3>
+                  </div>
+                  <p class="portal-card-copy portal-card-copy-tight">
+                    Submissions stay on your account so you can track club fulfillment status.
+                  </p>
+                  <button
+                    id="refresh-member-orders-btn"
+                    class="button button-secondary button-small"
+                    type="button"
+                  >
+                    Refresh list
+                  </button>
+                  <div id="member-orders-empty" class="portal-lock-note">Loading your orders…</div>
+                  <div id="member-orders-list" class="broadcast-list hidden"></div>
+                </section>
+
+                <section class="portal-card portal-surface" data-reveal>
+                  <div class="portal-card-head">
+                    <p class="eyebrow">Order details</p>
+                    <h3 class="brand-font">Submit an order</h3>
+                  </div>
+                  <form id="order-form" class="stack-form">
+                    <label class="field" for="order-name">
+                      <span class="field-label">Your name</span>
+                      <input
+                        id="order-name"
+                        name="order-name"
+                        class="input"
+                        type="text"
+                        placeholder="Your name"
+                        required
+                      />
+                    </label>
+                    <label class="field" for="order-phone">
+                      <span class="field-label">Phone</span>
+                      <input
+                        id="order-phone"
+                        name="order-phone"
+                        class="input"
+                        type="tel"
+                        autocomplete="tel"
+                        placeholder="Phone number"
+                      />
+                    </label>
+                    <label class="field" for="order-state">
+                      <span class="field-label">State</span>
+                      <select id="order-state" name="order-state" class="input">
+                        <option value="SA" selected>SA</option>
+                        <option value="VIC">VIC</option>
+                        <option value="NSW">NSW</option>
+                        <option value="QLD">QLD</option>
+                        <option value="WA">WA</option>
+                        <option value="TAS">TAS</option>
+                        <option value="NT">NT</option>
+                        <option value="ACT">ACT</option>
+                        <option value="OTHER">Other</option>
+                      </select>
+                    </label>
+                    <label class="field" for="order-notes">
+                      <span class="field-label">Notes</span>
+                      <textarea
+                        id="order-notes"
+                        name="order-notes"
+                        class="input textarea"
+                        placeholder="Pickup, delivery, or other notes"
+                      ></textarea>
+                    </label>
+                    <button
+                      id="submit-order-btn"
+                      class="button button-primary button-full"
+                      type="submit"
+                    >
+                      Submit order
+                    </button>
+                    <p class="portal-card-copy portal-card-copy-tight">
+                      Orders are saved to your member account so the club can confirm sizing,
+                      pickup, and delivery details. When email is configured, you will receive a
+                      confirmation at your sign-in address after submit.
+                    </p>
+                  </form>
+                </section>
+              </aside>
+            </div>
+          </section>
+
+          <section id="pane-account" class="portal-pane hidden" data-reveal>
+            <div class="account-grid">
+              <section class="portal-card portal-surface" data-reveal>
+                <div class="portal-card-head">
+                  <p class="eyebrow">Password</p>
+                  <h3 class="brand-font">Save a new password</h3>
+                </div>
+                <p class="portal-card-copy">
+                  If you just came in from a recovery email, set the new password here while signed
+                  in.
+                </p>
+                <form id="set-password-form" class="stack-form">
+                  <input
+                    id="password-username"
+                    class="visually-hidden"
+                    type="email"
+                    autocomplete="username"
+                    tabindex="-1"
+                    aria-hidden="true"
+                  />
+                  <label class="field" for="new-password">
+                    <span class="field-label">New password</span>
+                    <input
+                      id="new-password"
+                      name="new-password"
+                      class="input"
+                      type="password"
+                      autocomplete="new-password"
+                      placeholder="Enter new password"
+                      required
+                      minlength="8"
+                    />
+                  </label>
+                  <label class="field" for="confirm-password">
+                    <span class="field-label">Confirm password</span>
+                    <input
+                      id="confirm-password"
+                      name="confirm-password"
+                      class="input"
+                      type="password"
+                      autocomplete="new-password"
+                      placeholder="Confirm new password"
+                      required
+                      minlength="8"
+                    />
+                  </label>
+                  <button
+                    id="set-password-btn"
+                    class="button button-secondary button-full"
+                    type="submit"
+                  >
+                    Save password
+                  </button>
+                </form>
+              </section>
+
+              <section class="portal-card portal-surface" data-reveal>
+                <div class="portal-card-head">
+                  <p class="eyebrow">Member profile</p>
+                  <h3 class="brand-font">Notification preferences</h3>
+                </div>
+                <p class="portal-card-copy">
+                  Keep your contact details current so event notices and chapter updates can reach
+                  you.
+                </p>
+                <div id="profile-status" class="profile-status">Loading your profile...</div>
+                <div id="profile-meta" class="profile-meta hidden"></div>
+                <form id="member-profile-form" class="stack-form">
+                  <div class="field-row">
+                    <label class="field" for="profile-full-name">
+                      <span class="field-label">Display name</span>
+                      <input
+                        id="profile-full-name"
+                        name="profile-full-name"
+                        class="input"
+                        type="text"
+                        maxlength="120"
+                        placeholder="Your name"
+                      />
+                    </label>
+                    <label class="field" for="profile-phone">
+                      <span class="field-label">Phone</span>
+                      <input
+                        id="profile-phone"
+                        name="profile-phone"
+                        class="input"
+                        type="tel"
+                        autocomplete="tel"
+                        placeholder="Mobile number"
+                      />
+                    </label>
+                  </div>
+                  <label class="field" for="profile-email">
+                    <span class="field-label">Email</span>
+                    <input
+                      id="profile-email"
+                      name="profile-email"
+                      class="input"
+                      type="email"
+                      disabled
+                    />
+                  </label>
+                  <div class="field-row">
+                    <label class="checkbox-row" for="profile-notify-email">
+                      <input
+                        id="profile-notify-email"
+                        name="profile-notify-email"
+                        type="checkbox"
+                        checked
+                      />
+                      <span>Email event updates</span>
+                    </label>
+                    <label class="checkbox-row" for="profile-notify-sms">
+                      <input id="profile-notify-sms" name="profile-notify-sms" type="checkbox" />
+                      <span>SMS event updates</span>
+                    </label>
+                  </div>
+                  <button
+                    id="save-profile-btn"
+                    class="button button-primary button-full"
+                    type="submit"
+                  >
+                    Save profile
+                  </button>
+                  <p class="portal-card-copy portal-card-copy-tight">
+                    Keep this up to date so the club can reach you quickly when plans change.
+                  </p>
+                </form>
+              </section>
+            </div>
+          </section>
+
+          <section id="pane-chat" class="portal-pane hidden" data-reveal>
+            <section class="portal-chat portal-surface">
+              <div class="portal-chat-head">
+                <div>
+                  <p class="eyebrow">Members chat</p>
+                  <h3 class="brand-font">Chapter chat board</h3>
+                </div>
+                <button id="chat-refresh-btn" class="button button-secondary" type="button">
+                  Refresh chat
+                </button>
+              </div>
+
+              <p id="chat-status" class="portal-chat-status">
+                Signed-in members can post updates, quick notices, and club chatter here.
+              </p>
+
+              <div id="chat-empty" class="portal-chat-empty hidden">
+                No messages yet. Be the first member to start the conversation.
+              </div>
+
+              <div id="chat-list" class="portal-chat-list"></div>
+
+              <form id="chat-form" class="portal-chat-form">
+                <label class="field" for="chat-display-name">
+                  <span class="field-label">Display name</span>
+                  <input
+                    id="chat-display-name"
+                    name="chat-display-name"
+                    class="input"
+                    type="text"
+                    maxlength="80"
+                    placeholder="How your name should appear"
+                    required
+                  />
+                </label>
+
+                <label class="field" for="chat-message">
+                  <span class="field-label">Message</span>
+                  <textarea
+                    id="chat-message"
+                    name="chat-message"
+                    class="input textarea"
+                    maxlength="500"
+                    placeholder="Post a member update, ride note, or quick announcement"
+                    required
+                  ></textarea>
+                </label>
+
+                <div class="portal-chat-actions">
+                  <p class="portal-card-copy portal-card-copy-tight">
+                    Messages are visible to signed-in members only. Use this for club chat, notices,
+                    and quick coordination.
+                  </p>
+                  <button id="chat-send-btn" class="button button-primary" type="submit">
+                    Send message
+                  </button>
+                </div>
+              </form>
+            </section>
+          </section>
+
+          <section id="pane-admin" class="portal-pane hidden" data-reveal>
+            <div class="admin-grid">
+              <section class="portal-card portal-surface" data-reveal>
+                <div class="portal-card-head">
+                  <p class="eyebrow">Admin dashboard</p>
+                  <h3 class="brand-font">Control panel readiness</h3>
+                </div>
+                <p class="portal-card-copy">
+                  Check what is live before sending notices, editing the public website, or running
+                  the members shop.
+                </p>
+                <div id="admin-dashboard-metrics" class="broadcast-metrics"></div>
+                <div class="admin-dashboard-actions" role="group" aria-label="Admin quick jumps">
+                  <button
+                    class="button button-secondary button-small admin-dashboard-action"
+                    type="button"
+                    data-admin-target="admin-members"
+                    aria-controls="admin-members"
+                  >
+                    Open members
+                  </button>
+                  <button
+                    class="button button-secondary button-small admin-dashboard-action"
+                    type="button"
+                    data-admin-target="admin-merch-manager"
+                    aria-controls="admin-merch-manager"
+                  >
+                    Open merch
+                  </button>
+                  <button
+                    class="button button-secondary button-small admin-dashboard-action"
+                    type="button"
+                    data-admin-target="admin-site-content"
+                    aria-controls="admin-site-content"
+                  >
+                    Open website
+                  </button>
+                  <button
+                    class="button button-secondary button-small admin-dashboard-action"
+                    type="button"
+                    data-admin-target="admin-broadcasts"
+                    aria-controls="admin-broadcasts"
+                  >
+                    Open notices
+                  </button>
+                  <button
+                    class="button button-secondary button-small admin-dashboard-action"
+                    type="button"
+                    data-admin-target="admin-invites"
+                    aria-controls="admin-invites"
+                  >
+                    Open invites
+                  </button>
+                  <button
+                    class="button button-secondary button-small admin-dashboard-action"
+                    type="button"
+                    data-admin-target="admin-orders"
+                    aria-controls="admin-orders"
+                  >
+                    Open orders
+                  </button>
+                </div>
+                <div id="admin-dashboard-grid" class="admin-status-grid"></div>
+                <div id="admin-dashboard-next" class="portal-lock-note">
+                  Sign in with the admin account to see what is ready and what still needs setup.
+                </div>
+              </section>
+
+              <section
+                id="admin-orders"
+                class="portal-card portal-surface admin-jump-target"
+                data-reveal
+              >
+                <div class="portal-card-head">
+                  <p class="eyebrow">Drop fulfillment</p>
+                  <h3 class="brand-font">Member orders</h3>
+                </div>
+                <p class="portal-card-copy">
+                  Review cart submissions from the current drop. Update status as you confirm, pack,
+                  or ship.
+                </p>
+                <div class="member-directory-toolbar">
+                  <button
+                    id="refresh-admin-orders-btn"
+                    class="button button-secondary button-small"
+                    type="button"
+                  >
+                    Refresh orders
+                  </button>
+                </div>
+                <p id="admin-orders-status" class="portal-lock-note hidden"></p>
+                <div id="admin-orders-empty" class="portal-lock-note">
+                  Loading orders…
+                </div>
+                <div id="admin-orders-list" class="hidden"></div>
+              </section>
+
+              <section
+                id="admin-members"
+                class="portal-card portal-surface admin-jump-target"
+                data-reveal
+              >
+                <div class="portal-card-head">
+                  <p class="eyebrow">Member directory</p>
+                  <h3 class="brand-font">Approve members and manage admin access</h3>
+                </div>
+                <p class="portal-card-copy">
+                  This is the admin home for member approval and backup-admin coverage. Use it to
+                  approve members, promote a second admin, and keep the primary admin protected from
+                  accidental lockouts.
+                </p>
+                <div class="member-directory-toolbar">
+                  <label class="field" for="member-directory-search">
+                    <span class="field-label">Search members</span>
+                    <input
+                      id="member-directory-search"
+                      name="member-directory-search"
+                      class="input"
+                      type="search"
+                      placeholder="Search by name, email, or phone"
+                    />
+                  </label>
+                  <label class="field" for="member-directory-filter">
+                    <span class="field-label">Filter</span>
+                    <select id="member-directory-filter" name="member-directory-filter" class="input">
+                      <option value="all">All members</option>
+                      <option value="approved">Approved only</option>
+                      <option value="pending">Pending approval</option>
+                      <option value="admins">Admins only</option>
+                    </select>
+                  </label>
+                  <div class="field member-directory-toolbar-action">
+                    <span class="field-label">Refresh</span>
+                    <button
+                      id="refresh-member-directory-btn"
+                      class="button button-secondary"
+                      type="button"
+                    >
+                      Refresh members
+                    </button>
+                  </div>
+                </div>
+                <div id="member-directory-status" class="broadcast-status">
+                  Member directory access will load here once the admin account is ready.
+                </div>
+                <div id="member-directory-summary" class="broadcast-metrics hidden"></div>
+                <div id="member-directory-empty" class="portal-lock-note">
+                  Member records will appear here after the admin directory loads.
+                </div>
+                <div id="member-directory-list" class="broadcast-list hidden"></div>
+              </section>
+
+              <section
+                id="admin-merch-manager"
+                class="portal-card portal-surface admin-jump-target"
+                data-reveal
+              >
+                <div class="portal-card-head">
+                  <p class="eyebrow">Merch manager</p>
+                  <h3 class="brand-font">Add, hide, and update merch</h3>
+                </div>
+                <p class="portal-card-copy">
+                  Run the members shop from here. Add new items, update prices and images, hide old
+                  stock from the shop, or delete products you no longer need.
+                </p>
+                <div class="admin-merch-layout">
+                  <form id="merch-admin-form" class="stack-form">
+                    <input id="merch-admin-id" type="hidden" />
+                    <div class="field-row">
+                      <label class="field" for="merch-admin-name">
+                        <span class="field-label">Item name</span>
+                        <input
+                          id="merch-admin-name"
+                          name="merch-admin-name"
+                          class="input"
+                          type="text"
+                          maxlength="160"
+                          placeholder="BLFSC Tee"
+                        />
+                      </label>
+                      <label class="field" for="merch-admin-category">
+                        <span class="field-label">Category</span>
+                        <select id="merch-admin-category" name="merch-admin-category" class="input">
+                          <option value="shirts">Shirts</option>
+                          <option value="outerwear">Outerwear</option>
+                          <option value="pants">Pants</option>
+                          <option value="accessories">Accessories</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="field-row">
+                      <label class="field" for="merch-admin-price">
+                        <span class="field-label">Price</span>
+                        <input
+                          id="merch-admin-price"
+                          name="merch-admin-price"
+                          class="input"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="45.00"
+                        />
+                      </label>
+                      <label class="field" for="merch-admin-image-url">
+                        <span class="field-label">Image path or URL</span>
+                        <input
+                          id="merch-admin-image-url"
+                          name="merch-admin-image-url"
+                          class="input"
+                          type="text"
+                          maxlength="500"
+                        placeholder="/images/blfsc-tee.jpeg"
+                        />
+                      </label>
+                    </div>
+                    <div class="field-row">
+                      <div class="field">
+                        <span class="field-label">Upload image</span>
+                        <div
+                          id="merch-admin-dropzone"
+                          class="admin-merch-dropzone"
+                          tabindex="0"
+                          role="button"
+                          aria-controls="merch-admin-image-file"
+                          aria-describedby="merch-admin-dropzone-copy"
+                        >
+                          <strong id="merch-admin-image-file-name"
+                            >Drop image here or tap to choose</strong
+                          >
+                          <p id="merch-admin-dropzone-copy">
+                            JPG, PNG, WEBP, or GIF. Images are cropped square and resized
+                            automatically before upload.
+                          </p>
+                          <input
+                            id="merch-admin-image-file"
+                            name="merch-admin-image-file"
+                            class="visually-hidden"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/gif"
+                          />
+                        </div>
+                      </div>
+                      <div class="field">
+                        <span class="field-label">Image preview</span>
+                        <div class="admin-merch-preview">
+                          <img
+                            id="merch-admin-preview"
+                            class="admin-merch-preview-image hidden"
+                            alt="Merch preview"
+                          />
+                          <div
+                            id="merch-admin-preview-empty"
+                            class="portal-lock-note admin-merch-preview-empty"
+                          >
+                            Pick an image to preview it here. If you upload a file, it will be
+                            stored automatically when you save the merch item.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <label class="field" for="merch-admin-description">
+                      <span class="field-label">Description</span>
+                      <textarea
+                        id="merch-admin-description"
+                        name="merch-admin-description"
+                        class="input textarea"
+                        maxlength="500"
+                        placeholder="Short merch description for members"
+                      ></textarea>
+                    </label>
+                    <div class="field-row">
+                      <label class="checkbox-row" for="merch-admin-has-sizes">
+                        <input
+                          id="merch-admin-has-sizes"
+                          name="merch-admin-has-sizes"
+                          type="checkbox"
+                        />
+                        <span>This item uses size selection</span>
+                      </label>
+                      <label class="checkbox-row" for="merch-admin-active">
+                        <input
+                          id="merch-admin-active"
+                          name="merch-admin-active"
+                          type="checkbox"
+                          checked
+                        />
+                        <span>Show this item live in the members shop</span>
+                      </label>
+                    </div>
+                    <div class="portal-lock-note">
+                      Hidden items stay saved in the merch manager but disappear from the members
+                      shop. You can still paste an image URL if you want, but the quickest option is
+                      to pick a file and save.
+                    </div>
+                    <div class="invite-toolbar">
+                      <button id="save-merch-btn" class="button button-primary" type="submit">
+                        Add merch item
+                      </button>
+                      <button
+                        id="clear-merch-image-btn"
+                        class="button button-secondary"
+                        type="button"
+                      >
+                        Clear selected image
+                      </button>
+                      <button
+                        id="reset-merch-form-btn"
+                        class="button button-secondary"
+                        type="button"
+                      >
+                        Clear form
+                      </button>
+                    </div>
+                    <div id="merch-admin-status" class="broadcast-status">
+                      Merch manager will load here for the admin account.
+                    </div>
+                  </form>
+
+                  <div class="admin-merch-panel">
+                    <div id="merch-admin-summary" class="broadcast-metrics hidden"></div>
+                    <div id="merch-admin-empty" class="portal-lock-note">
+                      Your merch list will appear here when admin access is active.
+                    </div>
+                    <div id="merch-admin-list" class="broadcast-list hidden"></div>
+                  </div>
+                </div>
+              </section>
+
+              <section
+                id="admin-site-content"
+                class="portal-card portal-surface admin-jump-target"
+                data-reveal
+              >
+                <div class="portal-card-head">
+                  <p class="eyebrow">Website content</p>
+                  <h3 class="brand-font">Edit the public website</h3>
+                </div>
+                <p class="portal-card-copy">
+                  Update the main BLFSC website here without touching code. These fields feed
+                  blfsc.com so you can tune the homepage, about copy, contact details, and footer
+                  messaging from the admin account.
+                </p>
+                <form id="site-content-form" class="stack-form">
+                  <div class="field-row">
+                    <div class="field">
+                      <span class="field-label">Sitewide announcement bar</span>
+                      <label
+                        class="checkbox-row checkbox-row-inline"
+                        for="site-announcement-enabled"
+                      >
+                        <input
+                          id="site-announcement-enabled"
+                          name="site-announcement-enabled"
+                          type="checkbox"
+                        />
+                        <span>Show a sitewide notice at the top of every public page</span>
+                      </label>
+                    </div>
+                    <label class="field" for="site-announcement-title">
+                      <span class="field-label">Announcement label</span>
+                      <input
+                        id="site-announcement-title"
+                        name="site-announcement-title"
+                        class="input"
+                        type="text"
+                        maxlength="80"
+                        placeholder="Club notice"
+                      />
+                    </label>
+                  </div>
+                  <label class="field" for="site-announcement-message">
+                    <span class="field-label">Announcement message</span>
+                    <textarea
+                      id="site-announcement-message"
+                      name="site-announcement-message"
+                      class="input textarea"
+                      maxlength="220"
+                      placeholder="Top-bar message for urgent ride updates or public notices"
+                    ></textarea>
+                  </label>
+                  <div class="field-row">
+                    <label class="field" for="site-announcement-link-label">
+                      <span class="field-label">Announcement button label</span>
+                      <input
+                        id="site-announcement-link-label"
+                        name="site-announcement-link-label"
+                        class="input"
+                        type="text"
+                        maxlength="40"
+                        placeholder="View events"
+                      />
+                    </label>
+                    <label class="field" for="site-announcement-link-href">
+                      <span class="field-label">Announcement button link</span>
+                      <input
+                        id="site-announcement-link-href"
+                        name="site-announcement-link-href"
+                        class="input"
+                        type="text"
+                        maxlength="200"
+                        placeholder="/events"
+                      />
+                    </label>
+                  </div>
+
+                  <div class="field-row">
+                    <label class="field" for="site-hero-title">
+                      <span class="field-label">Hero title</span>
+                      <input
+                        id="site-hero-title"
+                        name="site-hero-title"
+                        class="input"
+                        type="text"
+                        maxlength="180"
+                        placeholder="B.L.F. Social Club. Rides, meet-ups, and members-only merch."
+                      />
+                    </label>
+                    <label class="field" for="site-hero-notice-title">
+                      <span class="field-label">Hero notice title</span>
+                      <input
+                        id="site-hero-notice-title"
+                        name="site-hero-notice-title"
+                        class="input"
+                        type="text"
+                        maxlength="120"
+                        placeholder="Next public ride window"
+                      />
+                    </label>
+                  </div>
+                  <label class="field" for="site-hero-description">
+                    <span class="field-label">Hero description</span>
+                    <textarea
+                      id="site-hero-description"
+                      name="site-hero-description"
+                      class="input textarea"
+                      maxlength="500"
+                      placeholder="Short public intro for the homepage hero"
+                    ></textarea>
+                  </label>
+                  <label class="field" for="site-hero-notice-copy">
+                    <span class="field-label">Hero notice copy</span>
+                    <textarea
+                      id="site-hero-notice-copy"
+                      name="site-hero-notice-copy"
+                      class="input textarea"
+                      maxlength="320"
+                      placeholder="Short ride notice, next meet-up, or pinned message"
+                    ></textarea>
+                  </label>
+
+                  <div class="field-row">
+                    <label class="field" for="site-story-title">
+                      <span class="field-label">Story section title</span>
+                      <input
+                        id="site-story-title"
+                        name="site-story-title"
+                        class="input"
+                        type="text"
+                        maxlength="160"
+                        placeholder="Built around the ride, the meet-up, and the people behind it."
+                      />
+                    </label>
+                    <div class="portal-lock-note">
+                      Changes are saved to Supabase right away and the live public site refreshes
+                      within about a minute.
+                    </div>
+                  </div>
+                  <label class="field" for="site-story-paragraph-one">
+                    <span class="field-label">Story paragraph one</span>
+                    <textarea
+                      id="site-story-paragraph-one"
+                      name="site-story-paragraph-one"
+                      class="input textarea"
+                      maxlength="500"
+                      placeholder="First about paragraph"
+                    ></textarea>
+                  </label>
+                  <label class="field" for="site-story-paragraph-two">
+                    <span class="field-label">Story paragraph two</span>
+                    <textarea
+                      id="site-story-paragraph-two"
+                      name="site-story-paragraph-two"
+                      class="input textarea"
+                      maxlength="500"
+                      placeholder="Second about paragraph"
+                    ></textarea>
+                  </label>
+
+                  <div class="field-row">
+                    <label class="field" for="site-contact-email">
+                      <span class="field-label">Contact email</span>
+                      <input
+                        id="site-contact-email"
+                        name="site-contact-email"
+                        class="input"
+                        type="email"
+                        placeholder="club@example.com"
+                      />
+                    </label>
+                    <label class="field" for="site-contact-phone">
+                      <span class="field-label">Contact phone</span>
+                      <input
+                        id="site-contact-phone"
+                        name="site-contact-phone"
+                        class="input"
+                        type="text"
+                        maxlength="40"
+                        placeholder="0417 000 000"
+                      />
+                    </label>
+                  </div>
+
+                  <div class="field-row">
+                    <label class="field" for="site-instagram-url">
+                      <span class="field-label">Instagram URL</span>
+                      <input
+                        id="site-instagram-url"
+                        name="site-instagram-url"
+                        class="input"
+                        type="url"
+                        placeholder="https://instagram.com/yourclub"
+                      />
+                    </label>
+                    <label class="field" for="site-facebook-url">
+                      <span class="field-label">Facebook URL</span>
+                      <input
+                        id="site-facebook-url"
+                        name="site-facebook-url"
+                        class="input"
+                        type="url"
+                        placeholder="https://facebook.com/yourclub"
+                      />
+                    </label>
+                  </div>
+                  <label class="field" for="site-tiktok-url">
+                    <span class="field-label">TikTok URL</span>
+                    <input
+                      id="site-tiktok-url"
+                      name="site-tiktok-url"
+                      class="input"
+                      type="url"
+                      placeholder="https://tiktok.com/@yourclub"
+                    />
+                  </label>
+
+                  <label class="field" for="site-footer-title">
+                    <span class="field-label">Footer title</span>
+                    <input
+                      id="site-footer-title"
+                      name="site-footer-title"
+                      class="input"
+                      type="text"
+                      maxlength="180"
+                      placeholder="Footer headline"
+                    />
+                  </label>
+                  <label class="field" for="site-footer-copy">
+                    <span class="field-label">Footer copy</span>
+                    <textarea
+                      id="site-footer-copy"
+                      name="site-footer-copy"
+                      class="input textarea"
+                      maxlength="400"
+                      placeholder="Footer support copy"
+                    ></textarea>
+                  </label>
+                  <label class="field" for="site-footer-note">
+                    <span class="field-label">Footer note</span>
+                    <textarea
+                      id="site-footer-note"
+                      name="site-footer-note"
+                      class="input textarea"
+                      maxlength="280"
+                      placeholder="Short footer note"
+                    ></textarea>
+                  </label>
+
+                  <div class="portal-lock-note">
+                    Advanced website JSON controls the rest of the live public site from this same
+                    admin panel, including home-page cards, the public events list, about/contact
+                    sections, merch-page copy, and privacy/terms text. The simple fields above still
+                    own announcement, hero, story, contact details, and footer settings.
+                  </div>
+                  <label class="field" for="site-advanced-json">
+                    <span class="field-label">Advanced website JSON</span>
+                    <textarea
+                      id="site-advanced-json"
+                      name="site-advanced-json"
+                      class="input textarea"
+                      rows="18"
+                      spellcheck="false"
+                      placeholder='{"home": {"quickLinks": []}, "events": []}'
+                    ></textarea>
+                  </label>
+
+                  <div class="invite-toolbar">
+                    <button id="save-site-content-btn" class="button button-primary" type="submit">
+                      Save website content
+                    </button>
+                    <button
+                      id="reset-site-content-btn"
+                      class="button button-secondary"
+                      type="button"
+                    >
+                      Load defaults
+                    </button>
+                    <button
+                      id="copy-website-link-btn"
+                      class="button button-secondary"
+                      type="button"
+                    >
+                      Copy website link
+                    </button>
+                    <a
+                      class="button button-secondary"
+                      href="__PUBLIC_SITE_URL__"
+                      target="_blank"
+                      rel="noreferrer"
+                      >Open website</a
+                    >
+                  </div>
+                  <div id="site-content-status" class="broadcast-status">
+                    Website content controls will load here once the admin account and site content
+                    table are ready.
+                  </div>
+                </form>
+              </section>
+
+              <section
+                id="admin-broadcasts"
+                class="portal-card portal-surface admin-jump-target"
+                data-reveal
+              >
+                <div class="portal-card-head">
+                  <p class="eyebrow">Admin only</p>
+                  <h3 class="brand-font">Broadcast an event notice</h3>
+                </div>
+                <p class="portal-card-copy">
+                  Send a message to approved members by email, SMS, or both. This pane uses the
+                  notification tables and edge function if they are configured.
+                </p>
+                <div id="admin-access-note" class="portal-lock-note hidden"></div>
+                <form id="member-broadcast-form" class="stack-form">
+                  <label class="field" for="broadcast-subject">
+                    <span class="field-label">Subject</span>
+                    <input
+                      id="broadcast-subject"
+                      name="broadcast-subject"
+                      class="input"
+                      type="text"
+                      maxlength="160"
+                      placeholder="Event reminder, route change, and so on"
+                    />
+                  </label>
+                  <label class="field" for="broadcast-message">
+                    <span class="field-label">Message</span>
+                    <textarea
+                      id="broadcast-message"
+                      name="broadcast-message"
+                      class="input textarea"
+                      maxlength="2000"
+                      placeholder="Write the notice you want to send to members"
+                    ></textarea>
+                  </label>
+                  <div class="field-row">
+                    <label class="field" for="broadcast-audience">
+                      <span class="field-label">Audience</span>
+                      <select id="broadcast-audience" name="broadcast-audience" class="input">
+                        <option value="approved_members" selected>Approved members</option>
+                        <option value="all_members">All members</option>
+                      </select>
+                    </label>
+                    <div class="field">
+                      <span class="field-label">Send mode</span>
+                      <label class="checkbox-row checkbox-row-inline" for="broadcast-dry-run">
+                        <input id="broadcast-dry-run" name="broadcast-dry-run" type="checkbox" />
+                        <span>Draft only</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="broadcast-channel-row">
+                    <label class="checkbox-row" for="broadcast-email">
+                      <input id="broadcast-email" name="broadcast-email" type="checkbox" checked />
+                      <span>Email</span>
+                    </label>
+                    <label class="checkbox-row" for="broadcast-sms">
+                      <input id="broadcast-sms" name="broadcast-sms" type="checkbox" />
+                      <span>SMS</span>
+                    </label>
+                  </div>
+                  <button
+                    id="send-broadcast-btn"
+                    class="button button-primary button-full"
+                    type="submit"
+                  >
+                    Send notification
+                  </button>
+                  <div id="broadcast-status" class="broadcast-status">
+                    Drafts work immediately. Live delivery needs an email provider like Resend or
+                    SMTP, and SMS needs Twilio.
+                  </div>
+                </form>
+              </section>
+
+              <section class="portal-card portal-surface" data-reveal>
+                <div class="portal-card-head">
+                  <p class="eyebrow">History</p>
+                  <h3 class="brand-font">Recent broadcasts</h3>
+                </div>
+                <p class="portal-card-copy">
+                  Review queued, draft, and sent notices here when the notification tables are
+                  available.
+                </p>
+                <div id="broadcast-metrics" class="broadcast-metrics hidden"></div>
+                <div id="broadcast-history-empty" class="portal-lock-note">
+                  Broadcast history will appear here once the notification tables are deployed.
+                </div>
+                <div id="broadcast-history-list" class="broadcast-list hidden"></div>
+              </section>
+
+              <section
+                id="admin-invites"
+                class="portal-card portal-surface admin-jump-target"
+                data-reveal
+              >
+                <div class="portal-card-head">
+                  <p class="eyebrow">Member invites</p>
+                  <h3 class="brand-font">Generate one-time invite links</h3>
+                </div>
+                <p class="portal-card-copy">
+                  Paste one email per line. If you also have a mobile number, paste it on the
+                  matching line and the portal will text the same invite link to that member. Email
+                  is still the account identity for the Supabase invite.
+                </p>
+                <form id="member-invite-form" class="stack-form">
+                  <label class="field" for="invite-emails">
+                    <span class="field-label">Member emails</span>
+                    <textarea
+                      id="invite-emails"
+                      name="invite-emails"
+                      class="input textarea"
+                      placeholder="member1@example.com&#10;member2@example.com"
+                    ></textarea>
+                  </label>
+                  <label class="field" for="invite-phones">
+                    <span class="field-label">Phone numbers, optional</span>
+                    <textarea
+                      id="invite-phones"
+                      name="invite-phones"
+                      class="input textarea"
+                      placeholder="0412 345 678&#10;0417 555 121"
+                    ></textarea>
+                  </label>
+                  <div class="field-row">
+                    <label class="field" for="invite-redirect">
+                      <span class="field-label">Invite redirect</span>
+                      <input
+                        id="invite-redirect"
+                        name="invite-redirect"
+                        class="input"
+                        type="url"
+                        placeholder="__PORTAL_URL__"
+                      />
+                    </label>
+                    <div class="field">
+                      <span class="field-label">How it works</span>
+                      <div class="portal-lock-note">
+                        Invite links are generated server-side for the emails you supply. If a
+                        matching phone number is supplied and Twilio is configured, the portal will
+                        also text the link to that member.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="invite-toolbar">
+                    <button
+                      id="generate-invite-links-btn"
+                      class="button button-primary"
+                      type="submit"
+                    >
+                      Generate invite links
+                    </button>
+                    <button
+                      id="download-invite-links-btn"
+                      class="button button-secondary"
+                      type="button"
+                      disabled
+                    >
+                      Download CSV
+                    </button>
+                  </div>
+                  <div id="invite-links-status" class="broadcast-status">
+                    Invite links will appear here once the admin account and invite function are
+                    configured.
+                  </div>
+                </form>
+                <div id="invite-results-empty" class="portal-lock-note">
+                  Generated invite links will appear here after you run the tool.
+                </div>
+                <div id="invite-results-list" class="broadcast-list hidden"></div>
+              </section>
+            </div>
+          </section>
+        </main>
+
+        <div id="cart-overlay" class="cart-overlay hidden"></div>
+
+        <aside
+          id="cart-drawer"
+          class="cart-drawer hidden"
+          aria-labelledby="cart-title"
+          aria-modal="true"
+          role="dialog"
+        >
+          <div class="cart-drawer-inner">
+            <div class="cart-drawer-head">
+              <div>
+                <p class="eyebrow">Order review</p>
+                <h3 id="cart-title" class="brand-font">Your cart</h3>
+                <p class="portal-card-copy portal-card-copy-tight">
+                  Review quantities, sizes, and totals before submitting.
+                </p>
+              </div>
+              <button id="close-cart" class="button button-secondary" type="button">Close</button>
+            </div>
+
+            <div id="cart-items" class="cart-items"></div>
+
+            <div class="cart-total-box">
+              <span>Total</span>
+              <strong id="cart-total">$0.00</strong>
+            </div>
+          </div>
+        </aside>
+
+        <div id="toast" class="portal-toast hidden" aria-live="polite"></div>
+      </section>
+    </div>
+  </body>
+</html>

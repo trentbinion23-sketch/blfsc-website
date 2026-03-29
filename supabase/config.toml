@@ -1,0 +1,8 @@
+[functions.member-invite-links]
+verify_jwt = true
+
+[functions.member-broadcast]
+verify_jwt = true
+
+[functions.order-notify]
+verify_jwt = true
