@@ -271,6 +271,14 @@ img {
   transform: translateY(0);
 }
 
+/* Active tab pane must not stay invisible: hidden panes never intersect for IntersectionObserver.
+   Pane roots also carry data-reveal, so include .portal-pane.is-active[data-reveal] (not only descendants). */
+.portal-pane.is-active[data-reveal],
+.portal-pane.is-active [data-reveal] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .site-header {
   position: sticky;
   top: 14px;

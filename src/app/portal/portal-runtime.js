@@ -48,6 +48,13 @@ const SITE_CONTENT_RECORD_ID = "public_site";
 const MEMBER_DIRECTORY_SELECTION =
   "user_id,email,full_name,phone,is_admin,approved,notify_email,notify_sms,sms_opted_in_at,created_at,updated_at";
 const MEMBERS_PORTAL_URL = buildSiteUrl("/portal");
+
+function coerceMemberIsAdmin(value) {
+  if (value === true || value === 1) return true;
+  if (value === false || value === null || value === undefined || value === 0) return false;
+  const s = String(value).toLowerCase();
+  return s === "t" || s === "true" || s === "1";
+}
 const BROADCAST_FUNCTION = "member-broadcast";
 const ORDER_NOTIFY_FUNCTION = "order-notify";
 const INVITE_FUNCTION = "member-invite-links";
@@ -1441,6 +1448,9 @@ function closeCart() {
 function revealPaneRevealNodes(paneId) {
   const root = document.getElementById(`pane-${paneId}`);
   if (!root) return;
+  if (root.hasAttribute("data-reveal") && !root.classList.contains("is-visible")) {
+    root.classList.add("is-visible");
+  }
   root.querySelectorAll("[data-reveal]:not(.is-visible)").forEach((node) => {
     node.classList.add("is-visible");
   });
@@ -1666,7 +1676,7 @@ function renderProfileMeta() {
   ];
   const uid = state.profile.user_id || state.session?.user?.id || "";
   const apiHost = supabasePublicApiHost();
-  const adminFlag = Boolean(state.profile.is_admin === true || state.profile.is_admin === "t");
+  const adminFlag = coerceMemberIsAdmin(state.profile.is_admin);
   const approvedFlag = Boolean(state.profile.approved === true || state.profile.approved === "t");
   els.profileMeta.innerHTML = `${chips
     .map((chip) => `<span class="profile-chip">${escapeHtml(chip)}</span>`)
@@ -1676,7 +1686,7 @@ function renderProfileMeta() {
       <ul class="profile-diagnostics-list">
         <li><strong>Supabase API host</strong> ${escapeHtml(apiHost)} — must match the project where you edit <code>member_profiles</code>.</li>
         <li><strong>Member user_id</strong> <code>${escapeHtml(uid || "—")}</code></li>
-        <li><strong>is_admin</strong> ${adminFlag ? "true" : "false"}, <strong>approved</strong> ${approvedFlag ? "true" : "false"} — if Admin tab is locked, set both to true in Supabase for this user_id in <strong>this</strong> project.</li>
+        <li><strong>is_admin</strong> ${adminFlag ? "true" : "false"}, <strong>approved</strong> ${approvedFlag ? "true" : "false"} — if both are true but Admin looks empty, reload the portal once; if the tab stays locked, fix flags in Supabase for this <code>user_id</code> on this host.</li>
       </ul>
     </div>`;
   els.profileMeta.classList.remove("hidden");
@@ -2697,8 +2707,7 @@ async function loadMemberProfile() {
   if (
     bootstrapResult?.action === "upserted" &&
     result.data &&
-    result.data.is_admin !== true &&
-    result.data.is_admin !== "t"
+    !coerceMemberIsAdmin(result.data.is_admin)
   ) {
     const retry = await db
       .from(PROFILE_TABLE)
@@ -2719,8 +2728,7 @@ async function loadMemberProfile() {
   let selfPromoteDiagnostic = "";
   if (
     result.data &&
-    result.data.is_admin !== true &&
-    result.data.is_admin !== "t" &&
+    !coerceMemberIsAdmin(result.data.is_admin) &&
     (sessionEmailNorm === portalOwnerEmailNormalized ||
       profileEmailNorm === portalOwnerEmailNormalized)
   ) {
@@ -2744,7 +2752,7 @@ async function loadMemberProfile() {
   }
 
   const rawProfile = result.data;
-  const isAdminEffective = rawProfile.is_admin === true || rawProfile.is_admin === "t";
+  const isAdminEffective = coerceMemberIsAdmin(rawProfile.is_admin);
   state.profile = { ...rawProfile, is_admin: isAdminEffective };
   state.profileAvailable = true;
   fillProfileForm(state.profile);
