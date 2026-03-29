@@ -509,8 +509,59 @@
           </section>
 
           <section id="pane-admin" class="portal-pane hidden" data-reveal>
-            <div class="admin-grid">
-              <section class="portal-card portal-surface" data-reveal>
+            <div class="admin-stack">
+              <div class="admin-section-toolbar portal-surface">
+                <div class="admin-section-picker-wrap">
+                  <label class="field admin-section-picker-field" for="admin-section-picker">
+                    <span class="field-label">Admin area</span>
+                    <select id="admin-section-picker" class="input admin-section-picker" name="admin-section-picker">
+                      <option value="overview">Overview</option>
+                      <option value="orders">Orders</option>
+                      <option value="members">Members</option>
+                      <option value="merch">Merch</option>
+                      <option value="website">Website</option>
+                      <option value="notices">Notices</option>
+                      <option value="invites">Invites</option>
+                    </select>
+                  </label>
+                </div>
+                <nav class="admin-section-tabs" role="tablist" aria-label="Admin tools">
+                  <button
+                    type="button"
+                    role="tab"
+                    class="admin-section-tab is-active"
+                    data-admin-section-tab="overview"
+                    aria-selected="true"
+                  >
+                    Overview
+                  </button>
+                  <button type="button" role="tab" class="admin-section-tab" data-admin-section-tab="orders" aria-selected="false">
+                    Orders
+                  </button>
+                  <button type="button" role="tab" class="admin-section-tab" data-admin-section-tab="members" aria-selected="false">
+                    Members
+                  </button>
+                  <button type="button" role="tab" class="admin-section-tab" data-admin-section-tab="merch" aria-selected="false">
+                    Merch
+                  </button>
+                  <button type="button" role="tab" class="admin-section-tab" data-admin-section-tab="website" aria-selected="false">
+                    Website
+                  </button>
+                  <button type="button" role="tab" class="admin-section-tab" data-admin-section-tab="notices" aria-selected="false">
+                    Notices
+                  </button>
+                  <button type="button" role="tab" class="admin-section-tab" data-admin-section-tab="invites" aria-selected="false">
+                    Invites
+                  </button>
+                </nav>
+              </div>
+
+              <section
+                id="admin-overview"
+                class="portal-card portal-surface admin-section-panel is-active"
+                data-admin-section="overview"
+                data-reveal
+              >
                 <div class="portal-card-head">
                   <p class="eyebrow">Admin dashboard</p>
                   <h3 class="brand-font">Control panel readiness</h3>
@@ -578,7 +629,8 @@
 
               <section
                 id="admin-orders"
-                class="portal-card portal-surface admin-jump-target"
+                class="portal-card portal-surface admin-jump-target admin-section-panel"
+                data-admin-section="orders"
                 data-reveal
               >
                 <div class="portal-card-head">
@@ -607,7 +659,8 @@
 
               <section
                 id="admin-members"
-                class="portal-card portal-surface admin-jump-target"
+                class="portal-card portal-surface admin-jump-target admin-section-panel"
+                data-admin-section="members"
                 data-reveal
               >
                 <div class="portal-card-head">
@@ -662,7 +715,8 @@
 
               <section
                 id="admin-merch-manager"
-                class="portal-card portal-surface admin-jump-target"
+                class="portal-card portal-surface admin-jump-target admin-section-panel"
+                data-admin-section="merch"
                 data-reveal
               >
                 <div class="portal-card-head">
@@ -839,7 +893,8 @@
 
               <section
                 id="admin-site-content"
-                class="portal-card portal-surface admin-jump-target"
+                class="portal-card portal-surface admin-jump-target admin-section-panel"
+                data-admin-section="website"
                 data-reveal
               >
                 <div class="portal-card-head">
@@ -1137,6 +1192,7 @@
                 </form>
               </section>
 
+              <div class="admin-section-panel" data-admin-section="notices">
               <section
                 id="admin-broadcasts"
                 class="portal-card portal-surface admin-jump-target"
@@ -1228,10 +1284,12 @@
                 </div>
                 <div id="broadcast-history-list" class="broadcast-list hidden"></div>
               </section>
+              </div>
 
               <section
                 id="admin-invites"
-                class="portal-card portal-surface admin-jump-target"
+                class="portal-card portal-surface admin-jump-target admin-section-panel"
+                data-admin-section="invites"
                 data-reveal
               >
                 <div class="portal-card-head">

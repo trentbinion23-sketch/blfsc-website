@@ -14,6 +14,16 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+## Publish to GitHub (Windows)
+
+One-time: `gh auth login` (install CLI with `winget install GitHub.cli` if needed). Commit your work, then from the repo root:
+
+```bash
+npm run git:publish
+```
+
+Creates a **private** repo named like this folder (`BLFSC-Website`), adds `origin`, and pushes `main`. If the remote already exists, it only pushes. To overwrite a divergent remote safely: `npm run git:publish:force` (`--force-with-lease`).
+
 ## Quality checks
 
 ```bash

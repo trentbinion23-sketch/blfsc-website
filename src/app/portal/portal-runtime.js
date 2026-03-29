@@ -76,6 +76,17 @@ const ORDER_STATUS_OPTIONS = [
 const ADMIN_LOCKED_MESSAGE =
   "Admin tools are locked for this account. If this should be the BLFSC admin login, sign out, refresh the portal, and sign back in so the latest permissions load.";
 
+const ADMIN_JUMP_TARGET_TO_SECTION = {
+  "admin-overview": "overview",
+  "admin-orders": "orders",
+  "admin-members": "members",
+  "admin-merch-manager": "merch",
+  "admin-site-content": "website",
+  "admin-broadcasts": "notices",
+  "admin-invites": "invites",
+};
+const ADMIN_SECTION_KEYS = new Set(Object.values(ADMIN_JUMP_TARGET_TO_SECTION));
+
 const state = {
   session: null,
   products: [],
@@ -95,6 +106,7 @@ const state = {
   inviteToolChecked: false,
   inviteToolHealthy: false,
   activePane: "shop",
+  adminSection: "overview",
   activeCategory: "all",
   memberOrders: [],
   memberOrdersAvailable: false,
@@ -1472,6 +1484,28 @@ function setActivePane(nextPane, updateHash = true) {
   });
   if (updateHash) history.replaceState(null, "", `#${pane}`);
   revealPaneRevealNodes(pane);
+  if (pane === "admin") {
+    setAdminSection(state.adminSection || "overview");
+  }
+}
+
+function setAdminSection(sectionId) {
+  let next = sectionId;
+  if (!ADMIN_SECTION_KEYS.has(next)) next = "overview";
+  state.adminSection = next;
+  const pane = document.getElementById("pane-admin");
+  if (!pane) return;
+  pane.querySelectorAll(".admin-section-panel").forEach((panel) => {
+    const on = panel.dataset.adminSection === next;
+    panel.classList.toggle("is-active", on);
+  });
+  document.querySelectorAll("[data-admin-section-tab]").forEach((tab) => {
+    const on = tab.dataset.adminSectionTab === next;
+    tab.classList.toggle("is-active", on);
+    tab.setAttribute("aria-selected", on ? "true" : "false");
+  });
+  const picker = document.getElementById("admin-section-picker");
+  if (picker && picker.value !== next) picker.value = next;
 }
 
 function activatePaneFromHash() {
@@ -1479,13 +1513,18 @@ function activatePaneFromHash() {
 }
 
 function jumpToAdminSection(targetId) {
-  const target = document.getElementById(targetId);
-  if (!target) return;
   if (!state.profile?.is_admin) {
     setAdminAccessBanner(ADMIN_LOCKED_MESSAGE);
     showToast("Admin tools are locked for this account.", true);
     return;
   }
+
+  const section = ADMIN_JUMP_TARGET_TO_SECTION[targetId];
+  setActivePane("admin");
+  if (section) setAdminSection(section);
+
+  const target = document.getElementById(targetId);
+  if (!target) return;
 
   const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ? "auto"
@@ -1495,7 +1534,6 @@ function jumpToAdminSection(targetId) {
       'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href]',
     ) || target;
 
-  setActivePane("admin");
   document.querySelectorAll(".admin-jump-target.is-targeted").forEach((section) => {
     section.classList.remove("is-targeted");
   });
@@ -2266,6 +2304,8 @@ function resetChatState() {
 function resetProfileState() {
   state.profile = null;
   state.profileAvailable = false;
+  state.adminSection = "overview";
+  setAdminSection("overview");
   toggleAdminTab(false);
   setAdminAccessBanner("");
   els.profileForm.reset();
@@ -3653,6 +3693,16 @@ document.querySelectorAll("[data-portal-tab]").forEach((button) => {
 document.querySelectorAll("[data-admin-target]").forEach((button) => {
   button.addEventListener("click", () => {
     jumpToAdminSection(button.dataset.adminTarget || "");
+  });
+});
+
+document.getElementById("admin-section-picker")?.addEventListener("change", (event) => {
+  setAdminSection(event.target.value);
+});
+
+document.querySelectorAll("[data-admin-section-tab]").forEach((button) => {
+  button.addEventListener("click", () => {
+    setAdminSection(button.dataset.adminSectionTab || "overview");
   });
 });
 

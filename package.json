@@ -29,7 +29,9 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "prepare": "husky"
+    "prepare": "husky",
+    "git:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/git-first-push.ps1",
+    "git:publish:force": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/git-first-push.ps1 -Force"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs,css,md,json,html,yml,yaml}": "prettier --write"
