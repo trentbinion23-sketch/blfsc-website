@@ -316,7 +316,10 @@ Deno.serve(
           serviceRoleKey,
         });
       } catch (error) {
-        throw error;
+        console.error(
+          "member-invite-links: consume_edge_rate_limit unavailable; skipping rate limit",
+          error instanceof Error ? error.message : error,
+        );
       }
       if (!rateLimit.allowed) {
         return json(

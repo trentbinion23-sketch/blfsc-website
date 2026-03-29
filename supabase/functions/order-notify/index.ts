@@ -316,8 +316,10 @@ Deno.serve(async (req) => {
         serviceRoleKey,
       });
     } catch (e) {
-      console.error("order-notify rate limit:", e);
-      return json({ error: "Rate limit check failed. Try again shortly." }, 503, origin);
+      console.error(
+        "order-notify: consume_edge_rate_limit unavailable; skipping rate limit",
+        e instanceof Error ? e.message : e,
+      );
     }
 
     if (!rateLimit.allowed) {

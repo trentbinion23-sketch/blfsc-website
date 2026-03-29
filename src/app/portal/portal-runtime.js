@@ -3381,8 +3381,7 @@ async function handleInviteSubmit(event) {
     const requestedCount = payload.requested ?? recipients.length;
     const generatedCount = payload.generated ?? 0;
     const inviteRowsFailedEntirely =
-      state.inviteResults.length > 0 &&
-      state.inviteResults.every((row) => row.status !== "ready");
+      state.inviteResults.length > 0 && state.inviteResults.every((row) => row.status !== "ready");
     setInviteStatus(
       `Processed ${requestedCount} invitation${requestedCount === 1 ? "" : "s"}: ${emailsSent} automatic invite email${emailsSent === 1 ? "" : "s"} sent, ${generatedCount} row${generatedCount === 1 ? "" : "s"} ready.${smsDelivered ? ` SMS sent to ${smsDelivered} phone${smsDelivered === 1 ? "" : "s"}.` : ""}${smsSkipped ? ` SMS skipped for ${smsSkipped} phone${smsSkipped === 1 ? "" : "s"}.` : ""}${smsFailed ? ` SMS failed for ${smsFailed} phone${smsFailed === 1 ? "" : "s"}.` : ""}`,
       inviteRowsFailedEntirely,

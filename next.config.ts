@@ -45,6 +45,10 @@ const cspHeaderKey =
     : "Content-Security-Policy";
 
 const nextConfig: NextConfig = {
+  // Fewer parallel writers avoids flaky ENOENTs on Windows (e.g. OneDrive-synced repos).
+  experimental: {
+    cpus: 1,
+  },
   images: {
     formats: ["image/avif", "image/webp"],
   },
