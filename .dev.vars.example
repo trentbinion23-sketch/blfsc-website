@@ -1,0 +1,13 @@
+# Copy to `.dev.vars` for local `next dev` / Wrangler (never commit `.dev.vars`).
+# See `.env.example` for variable descriptions.
+
+NEXTJS_ENV=production
+NEXT_PUBLIC_SITE_URL=https://blfsc.com
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=
+
+# Optional: CSP_REPORT_ONLY=true during rollout

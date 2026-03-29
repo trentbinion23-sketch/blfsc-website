@@ -10,15 +10,15 @@ type EventCardProps = {
 
 export function EventCard({ event }: EventCardProps) {
   return (
-    <article className="card-surface overflow-hidden">
-      <div className="relative aspect-[4/3] bg-[rgba(255,255,255,0.04)]">
+    <article className="card-surface interactive-card overflow-hidden">
+      <div className="image-panel relative aspect-[4/3] bg-[rgba(255,255,255,0.04)]">
         <img
           src={event.image}
           alt={event.title}
-          className="h-full w-full object-cover"
+          className="image-panel-media h-full w-full object-cover"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+        <div className="image-panel-overlay absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         <div className="absolute bottom-4 left-4 rounded-full border border-white/10 bg-[rgba(4,9,20,0.9)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--sand)]">
           {event.tag}
         </div>
@@ -35,7 +35,7 @@ export function EventCard({ event }: EventCardProps) {
             {event.location}
           </p>
         </div>
-        <p className="text-base leading-7">{event.excerpt}</p>
+        <p className="readable-copy text-base leading-7">{event.excerpt}</p>
         <Link
           href="/contact"
           className="btn-text"

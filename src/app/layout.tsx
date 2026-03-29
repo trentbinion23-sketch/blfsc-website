@@ -4,6 +4,7 @@ import { Barlow_Condensed, Source_Sans_3 } from "next/font/google";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { MobileConversionBar } from "@/components/MobileConversionBar";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { buildMetadata } from "@/lib/seo";
 import { getPublicSiteContent } from "@/lib/site-content";
@@ -57,6 +58,7 @@ export default async function RootLayout({
           <main className="flex-1">{children}</main>
           <Footer content={siteContent} />
         </div>
+        <MobileConversionBar />
       </body>
     </html>
   );

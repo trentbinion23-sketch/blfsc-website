@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CTASection } from "@/components/CTASection";
 import { EmptyState } from "@/components/EmptyState";
 import { EventCard } from "@/components/EventCard";
+import { FeatureFlagHomeCta } from "@/components/FeatureFlagHomeCta";
 import { Hero } from "@/components/Hero";
 import { PortalPromo } from "@/components/PortalPromo";
 import { ProductCard } from "@/components/ProductCard";
@@ -106,7 +107,7 @@ export default async function Home() {
         <section className="page-shell pb-10">
           <div className="grid gap-5 md:grid-cols-3">
             {siteContent.home.quickLinks.map((item) => (
-              <article key={item.label} className="card-surface p-6">
+              <article key={item.label} className="card-surface interactive-card p-6">
                 <div className="flex items-center gap-3">
                   <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(45,109,246,0.18)] text-sm font-bold text-[var(--sand)]">
                     {item.marker}
@@ -129,6 +130,10 @@ export default async function Home() {
           </div>
         </section>
       ) : null}
+
+      <section className="page-shell pb-4">
+        <FeatureFlagHomeCta />
+      </section>
 
       <section className="page-shell section-space">
         <SectionHeading
@@ -277,7 +282,7 @@ export default async function Home() {
           />
           <div className="mt-10 grid gap-6 lg:grid-cols-3">
             {siteContent.home.pillars.map((pillar) => (
-              <article key={pillar.title} className="card-surface p-7 sm:p-8">
+              <article key={pillar.title} className="card-surface interactive-card p-7 sm:p-8">
                 <p className="eyebrow">{pillar.eyebrow}</p>
                 <h3 className="mt-4 text-2xl leading-none sm:text-3xl">{pillar.title}</h3>
                 <p className="mt-4 text-base leading-7">{pillar.copy}</p>

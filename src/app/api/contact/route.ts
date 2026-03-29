@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 
@@ -48,23 +49,17 @@ async function sendContactEmail(input: ContactMessage) {
     };
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [to],
-      reply_to: input.email,
-      subject: `[BLFSC Contact] ${input.subject}`,
-      text: `Name: ${input.name}\nEmail: ${input.email}\nTopic: ${input.topic}\n\n${input.message}`,
-    }),
+  const resend = new Resend(apiKey);
+  const { error } = await resend.emails.send({
+    from,
+    to: [to],
+    replyTo: input.email,
+    subject: `[BLFSC Contact] ${input.subject}`,
+    text: `Name: ${input.name}\nEmail: ${input.email}\nTopic: ${input.topic}\n\n${input.message}`,
   });
 
   return {
-    sent: response.ok,
+    sent: !error,
     skipped: false,
   };
 }

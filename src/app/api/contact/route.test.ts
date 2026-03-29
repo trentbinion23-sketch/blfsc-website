@@ -2,8 +2,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
 
+const { sendEmailMock, resendConstructorMock } = vi.hoisted(() => ({
+  sendEmailMock: vi.fn(),
+  resendConstructorMock: vi.fn(),
+}));
+
 vi.mock("@/lib/security/rate-limit", () => ({
   consumeRateLimit: vi.fn(),
+}));
+vi.mock("resend", () => ({
+  Resend: class {
+    emails = { send: sendEmailMock };
+    constructor(apiKey: string) {
+      resendConstructorMock(apiKey);
+    }
+  },
 }));
 
 const mockedConsumeRateLimit = vi.mocked(consumeRateLimit);
@@ -29,6 +42,8 @@ describe("POST /api/contact", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     mockedConsumeRateLimit.mockReset();
+    resendConstructorMock.mockReset();
+    sendEmailMock.mockReset();
     mockedConsumeRateLimit.mockResolvedValue({
       allowed: true,
       retryAfterMs: 0,
@@ -109,10 +124,10 @@ describe("POST /api/contact", () => {
     process.env.RESEND_API_KEY = "resend-key";
     process.env.CONTACT_TO_EMAIL = "contact@blfsc.com";
     process.env.CONTACT_FROM_EMAIL = "noreply@blfsc.com";
-
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue(new Response(JSON.stringify({ id: "email-123" }), { status: 200 }));
+    sendEmailMock.mockResolvedValueOnce({
+      data: { id: "email-123" },
+      error: null,
+    });
 
     const response = await POST(
       createRequest(
@@ -133,19 +148,13 @@ describe("POST /api/contact", () => {
       sent: true,
       skipped: false,
     });
-    expect(fetchSpy).toHaveBeenCalledWith("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        authorization: "Bearer resend-key",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "noreply@blfsc.com",
-        to: ["contact@blfsc.com"],
-        reply_to: "member@example.com",
-        subject: "[BLFSC Contact] Question",
-        text: "Name: Test User\nEmail: member@example.com\nTopic: Membership\n\nThis message is definitely long enough to be accepted.",
-      }),
+    expect(resendConstructorMock).toHaveBeenCalledWith("resend-key");
+    expect(sendEmailMock).toHaveBeenCalledWith({
+      from: "noreply@blfsc.com",
+      to: ["contact@blfsc.com"],
+      replyTo: "member@example.com",
+      subject: "[BLFSC Contact] Question",
+      text: "Name: Test User\nEmail: member@example.com\nTopic: Membership\n\nThis message is definitely long enough to be accepted.",
     });
   });
 });

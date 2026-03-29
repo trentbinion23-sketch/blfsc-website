@@ -9,14 +9,15 @@ type ProductCardProps = {
 
 export function ProductCard({ product }: ProductCardProps) {
   return (
-    <article className="card-surface overflow-hidden">
-      <div className="relative aspect-[4/3] bg-black/5">
+    <article className="card-surface interactive-card overflow-hidden">
+      <div className="image-panel relative aspect-[4/3] bg-black/5">
         <img
           src={product.image}
           alt={product.name}
-          className="h-full w-full object-cover"
+          className="image-panel-media h-full w-full object-cover"
           loading="lazy"
         />
+        <div className="image-panel-overlay absolute inset-0" />
       </div>
       <div className="space-y-4 p-6">
         <div className="flex items-center justify-between gap-3">
@@ -26,7 +27,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
         <div>
           <h3 className="text-3xl leading-none">{product.name}</h3>
-          <p className="mt-3 text-base leading-7">{product.excerpt}</p>
+          <p className="readable-copy mt-3 text-base leading-7">{product.excerpt}</p>
         </div>
         <Link
           href="/portal"

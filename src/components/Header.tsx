@@ -12,7 +12,7 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[rgba(4,9,20,0.9)] backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[linear-gradient(180deg,rgba(4,9,20,0.96),rgba(4,9,20,0.88))] backdrop-blur-xl">
       <div className="page-shell flex items-center justify-between gap-4 py-4">
         <Link href="/" className="flex items-center gap-3">
           <div className="relative hidden h-12 w-12 overflow-hidden rounded-full border border-[var(--line)] bg-white/10 sm:block">
@@ -51,8 +51,8 @@ export function Header() {
                 className={cn(
                   "rounded-full px-4 py-3 text-sm font-semibold transition",
                   active
-                    ? "bg-[var(--moss)] text-white"
-                    : "text-[var(--foreground)] hover:bg-white/8",
+                    ? "bg-[var(--moss)] text-white shadow-[0_8px_24px_rgba(45,109,246,0.28)]"
+                    : "text-[var(--foreground)] hover:bg-white/8 hover:text-white",
                 )}
                 data-track-event="nav_click"
                 data-track-location="header_nav"
