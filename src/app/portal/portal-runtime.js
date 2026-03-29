@@ -3378,18 +3378,30 @@ async function handleInviteSubmit(event) {
     const smsSkipped = payload.sms_skipped || 0;
     const smsFailed = payload.sms_failed || 0;
     const emailsSent = payload.emails_sent ?? 0;
+    const requestedCount = payload.requested ?? recipients.length;
+    const generatedCount = payload.generated ?? 0;
+    const inviteRowsFailedEntirely =
+      state.inviteResults.length > 0 &&
+      state.inviteResults.every((row) => row.status !== "ready");
     setInviteStatus(
-      `Processed ${payload.requested || recipients.length} invitation${recipients.length === 1 ? "" : "s"}: ${emailsSent} automatic invite email${emailsSent === 1 ? "" : "s"} sent, ${payload.generated || 0} row${payload.generated === 1 ? "" : "s"} ready.${smsDelivered ? ` SMS sent to ${smsDelivered} phone${smsDelivered === 1 ? "" : "s"}.` : ""}${smsSkipped ? ` SMS skipped for ${smsSkipped} phone${smsSkipped === 1 ? "" : "s"}.` : ""}${smsFailed ? ` SMS failed for ${smsFailed} phone${smsFailed === 1 ? "" : "s"}.` : ""}`,
+      `Processed ${requestedCount} invitation${requestedCount === 1 ? "" : "s"}: ${emailsSent} automatic invite email${emailsSent === 1 ? "" : "s"} sent, ${generatedCount} row${generatedCount === 1 ? "" : "s"} ready.${smsDelivered ? ` SMS sent to ${smsDelivered} phone${smsDelivered === 1 ? "" : "s"}.` : ""}${smsSkipped ? ` SMS skipped for ${smsSkipped} phone${smsSkipped === 1 ? "" : "s"}.` : ""}${smsFailed ? ` SMS failed for ${smsFailed} phone${smsFailed === 1 ? "" : "s"}.` : ""}`,
+      inviteRowsFailedEntirely,
     );
     track("portal_invite_links_generated", {
-      requested: payload.requested || recipients.length,
-      generated: payload.generated || 0,
+      requested: requestedCount,
+      generated: generatedCount,
       emails_sent: emailsSent,
       sms_sent: smsDelivered,
       sms_failed: smsFailed,
+      all_rows_failed: inviteRowsFailedEntirely,
     });
     renderAdminDashboard();
-    showToast("Invitations processed.");
+    showToast(
+      inviteRowsFailedEntirely
+        ? "No invitations completed. Review each row below."
+        : "Invitations processed.",
+      inviteRowsFailedEntirely,
+    );
   } catch (error) {
     console.error(error);
     state.inviteResults = [];

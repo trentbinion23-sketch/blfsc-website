@@ -155,8 +155,11 @@ function classifyInviteError(message: string) {
 function extractActionLink(payload: Record<string, unknown>) {
   const candidates = [
     payload.action_link,
+    payload.verification_link,
+    payload.email_action_link,
     (payload.properties as Record<string, unknown> | undefined)?.action_link,
     (payload.properties as Record<string, unknown> | undefined)?.email_action_link,
+    (payload.properties as Record<string, unknown> | undefined)?.confirmation_link,
     (payload.data as Record<string, unknown> | undefined)?.action_link,
     (
       (payload.data as Record<string, unknown> | undefined)?.properties as
@@ -167,6 +170,21 @@ function extractActionLink(payload: Record<string, unknown>) {
 
   const match = candidates.find((value) => typeof value === "string" && value.startsWith("http"));
   return typeof match === "string" ? match : "";
+}
+
+/** First row wins; avoids double invites when the API client sends duplicate emails. */
+function dedupeRecipientsByEmail<
+  T extends {
+    email: string;
+  },
+>(recipients: T[]) {
+  const byEmail = new Map<string, T>();
+  for (const row of recipients) {
+    if (!byEmail.has(row.email)) {
+      byEmail.set(row.email, row);
+    }
+  }
+  return [...byEmail.values()];
 }
 
 function getSmsProviderName() {
@@ -278,7 +296,12 @@ Deno.serve(
         return json({ error: "Only admins can generate member invite links." }, 403, origin);
       }
 
-      const body = (await req.json()) as InviteRequest;
+      let body: InviteRequest;
+      try {
+        body = (await req.json()) as InviteRequest;
+      } catch {
+        return json({ error: "Invalid JSON body." }, 400, origin);
+      }
       const clientIp = getClientIp(req);
       let rateLimit = {
         allowed: true,
@@ -320,7 +343,9 @@ Deno.serve(
       const invalidEmails = recipients
         .map((recipient) => recipient.email)
         .filter((email) => !emailLooksValid(email));
-      const validRecipients = recipients.filter((recipient) => emailLooksValid(recipient.email));
+      const validRecipients = dedupeRecipientsByEmail(
+        recipients.filter((recipient) => emailLooksValid(recipient.email)),
+      );
       const invalidPhones = recipients
         .filter((recipient) => recipient.phone && !normalizePhoneNumber(recipient.phone))
         .map((recipient) => String(recipient.phone || ""));
@@ -491,7 +516,7 @@ Deno.serve(
         {
           requested: validRecipients.length,
           generated: results.filter((item) => item.status === "ready").length,
-          emails_sent: results.filter((item) => item.email_sent).length,
+          emails_sent: results.filter((item) => item.email_sent === true).length,
           invalid_emails: invalidEmails,
           invalid_phones: invalidPhones,
           redirect_to: redirectTo || null,

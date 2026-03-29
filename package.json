@@ -16,6 +16,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
+    "test:e2e:prod-smoke": "cross-env PLAYWRIGHT_BASE_URL=https://blfsc.com playwright test tests/e2e/smoke.spec.ts",
     "test:e2e:install": "playwright install --with-deps chromium",
     "lighthouse:ci": "node scripts/run-lighthouse-ci.mjs",
     "quality:ci": "npm run build && cross-env PLAYWRIGHT_BASE_URL=http://127.0.0.1:3100 LHCI_BASE_URL=http://127.0.0.1:3100 start-server-and-test \"npm run start:ci\" http://127.0.0.1:3100 \"npm run test:e2e && npm run lighthouse:ci\"",
