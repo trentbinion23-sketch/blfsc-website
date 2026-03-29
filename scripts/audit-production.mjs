@@ -55,8 +55,15 @@ function wranglerWhoamiDefaultAccountId() {
 function resolveCloudflareCredentials() {
   const accountIdEnv = process.env.CLOUDFLARE_ACCOUNT_ID?.trim() || null;
   const apiTokenEnv = process.env.CLOUDFLARE_API_TOKEN?.trim() || null;
-  const apiToken = apiTokenEnv || readWranglerOAuthTokenFromDisk();
-  const accountId = accountIdEnv || (apiToken ? wranglerWhoamiDefaultAccountId() : null);
+  if (apiTokenEnv) {
+    const accountId = accountIdEnv || wranglerWhoamiDefaultAccountId();
+    return { accountId, apiToken: apiTokenEnv };
+  }
+
+  // `wrangler whoami` refreshes expired OAuth access tokens before we read them from disk.
+  const wranglerAccountId = wranglerWhoamiDefaultAccountId();
+  const apiToken = readWranglerOAuthTokenFromDisk();
+  const accountId = accountIdEnv || (apiToken ? wranglerAccountId : null);
   return { accountId, apiToken };
 }
 

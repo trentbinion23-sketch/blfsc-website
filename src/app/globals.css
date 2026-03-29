@@ -49,7 +49,7 @@ body::before {
   pointer-events: none;
   background:
     linear-gradient(180deg, rgba(4, 9, 20, 0.76), rgba(4, 9, 20, 0.96)),
-    url("/images/storm-website.png") center top / cover no-repeat;
+    url("/images/storm-website.webp") center top / cover no-repeat;
   opacity: 0.24;
 }
 

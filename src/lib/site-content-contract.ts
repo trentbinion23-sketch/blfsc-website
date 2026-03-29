@@ -360,7 +360,7 @@ export const siteContentDefaults: SiteContent = {
         "A Sunday morning run through the hills with a coffee regroup in Hahndorf and an easy roll back into town.",
       description:
         "Meet north of the city, roll out as a group, and settle into an Adelaide Hills route built for a clean run, a solid catch-up, and breakfast with the club.",
-      image: "/images/storm-website.png",
+      image: "/images/storm-website.webp",
       featured: true,
     },
     {
@@ -390,7 +390,7 @@ export const siteContentDefaults: SiteContent = {
         "A mid-autumn coastal run with a lunch stop on the foreshore and time to settle in before the ride home.",
       description:
         "This run heads south through the coastal roads, regroups along the way, and finishes with lunch and photos before the staggered ride back.",
-      image: "/images/storm-website.png",
+      image: "/images/storm-website.webp",
       featured: true,
     },
     {
@@ -405,7 +405,7 @@ export const siteContentDefaults: SiteContent = {
         "A longer Sunday ride through the north with a lunch stop in the valley and an easy staggered return.",
       description:
         "The Barossa route is built for members and supporters who want a full ride day, open roads, and a proper sit-down meal before the trip back.",
-      image: "/images/storm-website.png",
+      image: "/images/storm-website.webp",
       featured: false,
     },
     {

@@ -29,7 +29,7 @@ export const siteAssets = {
   logo: "/images/blfsc-logo.png",
   wordmark: "/images/blf-wordmark.svg",
   rhinoMark: "/images/blf-rhino-mark.png",
-  stormVisual: "/images/storm-website.png",
+  stormVisual: "/images/storm-website.webp",
   icon192: "/images/icon-192.png",
   icon512: "/images/icon-512.png",
 } as const;

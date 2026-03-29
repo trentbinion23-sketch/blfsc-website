@@ -25,7 +25,7 @@ export function Hero({ eyebrow, title, description, actions, aside }: HeroProps)
         <div className="card-surface interactive-card image-panel relative overflow-hidden border-[var(--line)] bg-[linear-gradient(135deg,rgba(7,14,26,0.98),rgba(5,12,22,0.94))] p-7 text-white sm:p-10 lg:p-12">
           <div className="absolute inset-0">
             <Image
-              src="/images/storm-website.png"
+              src="/images/storm-website.webp"
               alt=""
               fill
               sizes="(min-width: 1024px) 55vw, 100vw"

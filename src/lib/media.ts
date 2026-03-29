@@ -1,4 +1,5 @@
 const imageFilePattern = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
+const stormVisualAliases = new Set(["storm-website.png", "images/storm-website.png"]);
 
 export function normalizeSiteImagePath(value: string | null | undefined, fallback: string) {
   const raw = String(value || "").trim();
@@ -14,6 +15,9 @@ export function normalizeSiteImagePath(value: string | null | undefined, fallbac
 
   const cleaned = raw.replace(/^\.?\/*/, "");
   if (!cleaned) return fallback;
+  if (stormVisualAliases.has(cleaned.toLowerCase())) {
+    return "/images/storm-website.webp";
+  }
 
   if (cleaned.startsWith("images/")) {
     return `/${cleaned}`;

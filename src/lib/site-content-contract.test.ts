@@ -70,7 +70,7 @@ describe("site content contract", () => {
         tag: "Ride",
         excerpt: "A custom event.",
         description: "A custom event with admin-managed content.",
-        image: "/images/storm-website.png",
+        image: "/images/storm-website.webp",
         featured: true,
       },
     ]);
