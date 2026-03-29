@@ -51,7 +51,7 @@ export function Header() {
                 className={cn(
                   "rounded-full px-4 py-3 text-sm font-semibold transition",
                   active
-                    ? "bg-[var(--moss)] text-white shadow-[0_8px_24px_rgba(45,109,246,0.28)]"
+                    ? "bg-[#2559cf] text-white shadow-[0_8px_24px_rgba(45,109,246,0.28)]"
                     : "text-[var(--foreground)] hover:bg-white/8 hover:text-white",
                 )}
                 data-track-event="nav_click"

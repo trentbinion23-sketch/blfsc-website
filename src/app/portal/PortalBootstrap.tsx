@@ -6,9 +6,10 @@ export function PortalBootstrap() {
   useEffect(() => {
     void import("./portal-runtime.js").catch((error) => {
       console.error("Portal runtime failed to load", error);
-      const status = document.getElementById("auth-status");
+      const status = document.getElementById("auth-message");
       if (status) {
         status.textContent = "Portal is temporarily unavailable. Please try again shortly.";
+        status.classList.remove("hidden");
       }
     });
   }, []);
