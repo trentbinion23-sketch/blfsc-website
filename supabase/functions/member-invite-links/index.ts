@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 import { applyRateLimit, getClientIp } from "../_shared/security.ts";
 
 type InviteRequest = {
@@ -224,6 +224,46 @@ async function sendSms(input: { to: string; message: string }) {
     : { ok: false, error: data?.message || "SMS provider rejected request" };
 }
 
+async function fetchAdminInviteLink(input: {
+  supabaseUrl: string;
+  serviceRoleKey: string;
+  email: string;
+  redirectTo: string | undefined;
+  data: Record<string, string>;
+}): Promise<{ ok: true; actionLink: string } | { ok: false; message: string }> {
+  const response = await fetch(`${input.supabaseUrl}/auth/v1/admin/generate_link`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${input.serviceRoleKey}`,
+      apikey: input.serviceRoleKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      type: "invite",
+      email: input.email,
+      redirect_to: input.redirectTo,
+      data: input.data,
+    }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = String(
+      (payload as Record<string, unknown>).msg ||
+        (payload as Record<string, unknown>).error_description ||
+        (payload as Record<string, unknown>).error ||
+        "Invite generation failed.",
+    );
+    return { ok: false, message };
+  }
+
+  const actionLink = extractActionLink(payload as Record<string, unknown>);
+  if (!actionLink) {
+    return { ok: false, message: "Supabase did not return an invite link for this email." };
+  }
+  return { ok: true, actionLink };
+}
+
 Deno.serve(
   async (req) => {
     const origin = req.headers.get("origin");
@@ -317,8 +357,16 @@ Deno.serve(
         });
       } catch (error) {
         console.error(
-          "member-invite-links: consume_edge_rate_limit unavailable; skipping rate limit",
+          "member-invite-links: consume_edge_rate_limit failed",
           error instanceof Error ? error.message : error,
+        );
+        return json(
+          {
+            error:
+              "Rate limiting is temporarily unavailable. Try again in a moment, or verify the consume_edge_rate_limit migration is applied.",
+          },
+          503,
+          origin,
         );
       }
       if (!rateLimit.allowed) {
@@ -369,87 +417,64 @@ Deno.serve(
           invited_by: senderProfile.email,
           invite_source: "portal_admin",
         };
-
-        const { error: inviteUserError } = await supabase.auth.admin.inviteUserByEmail(
-          email,
-          redirectTo ? { redirectTo, data: invitePayload } : { data: invitePayload },
-        );
-
-        const emailSent = !inviteUserError;
         const hasPhone = Boolean(String(recipient.phone || "").trim());
-        const needInviteLink = hasPhone || !emailSent;
 
+        let emailInviteFailedMessage = "";
+        let emailSent = false;
         let actionLink = "";
-        if (needInviteLink) {
-          const response = await fetch(`${supabaseUrl}/auth/v1/admin/generate_link`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${serviceRoleKey}`,
-              apikey: serviceRoleKey,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              type: "invite",
-              email,
-              redirect_to: redirectTo,
-              data: invitePayload,
-            }),
+
+        if (hasPhone) {
+          // Do not call inviteUserByEmail here: it emails a link tied to confirmation_token, and a
+          // subsequent generate_link for SMS would mint a new token and invalidate that email.
+          const linkResult = await fetchAdminInviteLink({
+            supabaseUrl,
+            serviceRoleKey,
+            email,
+            redirectTo,
+            data: invitePayload,
           });
-
-          const payload = await response.json().catch(() => ({}));
-          if (!response.ok) {
-            const message = String(
-              (payload as Record<string, unknown>).msg ||
-                (payload as Record<string, unknown>).error_description ||
-                (payload as Record<string, unknown>).error ||
-                "Invite generation failed.",
-            );
-
-            if (emailSent && hasPhone) {
-              results.push({
-                email,
-                phone: recipient.phone || undefined,
-                status: "ready",
-                email_sent: true,
-                note: "Supabase emailed this invitation, but a link for SMS could not be generated. The member can use the email.",
-                sms_status: "failed",
-                sms_error: message,
-              });
-              smsFailed += 1;
-            } else {
-              results.push({
-                email,
-                phone: recipient.phone || undefined,
-                status: classifyInviteError(message),
-                error: message,
-                note: "Review this member before sending another invite.",
-              });
-            }
+          if (!linkResult.ok) {
+            results.push({
+              email,
+              phone: recipient.phone || undefined,
+              status: classifyInviteError(linkResult.message),
+              error: linkResult.message,
+              note: "Review this member before sending another invite.",
+            });
             continue;
           }
+          actionLink = linkResult.actionLink;
+        } else {
+          const { error: inviteUserError } = await supabase.auth.admin.inviteUserByEmail(
+            email,
+            redirectTo ? { redirectTo, data: invitePayload } : { data: invitePayload },
+          );
+          emailSent = !inviteUserError;
+          if (inviteUserError) {
+            emailInviteFailedMessage = inviteUserError.message;
+          }
 
-          actionLink = extractActionLink(payload as Record<string, unknown>);
-          if (!actionLink) {
-            if (emailSent && hasPhone) {
+          if (!emailSent) {
+            const linkResult = await fetchAdminInviteLink({
+              supabaseUrl,
+              serviceRoleKey,
+              email,
+              redirectTo,
+              data: invitePayload,
+            });
+            if (!linkResult.ok) {
               results.push({
                 email,
                 phone: recipient.phone || undefined,
-                status: "ready",
-                email_sent: true,
-                note: "Supabase emailed this invitation, but no link was returned for SMS. The member can use the email.",
-                sms_status: "failed",
-                sms_error: "Supabase did not return an invite link for this email.",
+                status: classifyInviteError(linkResult.message),
+                error: linkResult.message,
+                note: emailInviteFailedMessage
+                  ? `${emailInviteFailedMessage} Link generation also failed.`
+                  : "Review this member before sending another invite.",
               });
-              smsFailed += 1;
-            } else {
-              results.push({
-                email,
-                phone: recipient.phone || undefined,
-                status: "error",
-                error: "Supabase did not return an invite link for this email.",
-              });
+              continue;
             }
-            continue;
+            actionLink = linkResult.actionLink;
           }
         }
 
@@ -484,21 +509,19 @@ Deno.serve(
         }
 
         const noteForReady = (() => {
+          if (hasPhone) {
+            if (smsStatus === "sent") {
+              return "Invite link texted. No automatic email when a phone is provided (single link avoids an invalid email). Use Copy link to email it yourself if needed.";
+            }
+            return "Invite link is ready. SMS status is below. No automatic email when a phone line is provided; use Copy link to email if needed.";
+          }
           if (emailSent && !actionLink) {
             return "Supabase sent an invitation email to this member. No copy link is needed.";
           }
-          if (emailSent && hasPhone) {
-            return smsStatus === "sent"
-              ? "Invitation emailed and invite link texted."
-              : "Invitation emailed. SMS status is shown below.";
-          }
           if (actionLink && !emailSent) {
-            return "Automatic email was not sent (check Auth email settings or existing user). Copy the link or resend from the dashboard.";
-          }
-          if (recipient.phone) {
-            return smsStatus === "sent"
-              ? "Invite link generated and texted to the member."
-              : "Invite link generated. Text delivery needs Twilio or a valid phone number.";
+            return emailInviteFailedMessage
+              ? `Automatic invite email failed (${emailInviteFailedMessage}). Copy this link or fix Auth email settings.`
+              : "Automatic email was not sent (check Auth email settings or existing user). Copy the link or resend from the dashboard.";
           }
           return "Copy this invite link and send it to the member.";
         })();

@@ -104,7 +104,7 @@ export default async function Home() {
       />
 
       {siteContent.home.quickLinks.length ? (
-        <section className="page-shell pb-10">
+        <section className="page-shell section-rhythm pb-10">
           <div className="grid gap-5 md:grid-cols-3">
             {siteContent.home.quickLinks.map((item) => (
               <article key={item.label} className="card-surface interactive-card p-6">
@@ -114,7 +114,7 @@ export default async function Home() {
                   </span>
                   <h2 className="text-2xl leading-none sm:text-3xl">{item.label}</h2>
                 </div>
-                <p className="mt-4 text-base leading-7">{item.copy}</p>
+                <p className="readable-copy mt-4 text-base leading-7">{item.copy}</p>
                 <Link
                   href={item.href}
                   className="btn-text mt-4"
@@ -135,7 +135,7 @@ export default async function Home() {
         <FeatureFlagHomeCta />
       </section>
 
-      <section className="page-shell section-space">
+      <section className="page-shell section-rhythm section-space">
         <SectionHeading
           eyebrow={siteContent.home.eventsHeading.eyebrow}
           title={siteContent.home.eventsHeading.title}
@@ -157,7 +157,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="page-shell section-space">
+      <section className="page-shell section-rhythm section-space">
         <div className="grid gap-8 lg:grid-cols-[0.96fr_1.04fr] lg:items-center">
           <div className="space-y-5">
             <SectionHeading
@@ -165,8 +165,12 @@ export default async function Home() {
               title={siteContent.story.title}
               description={siteContent.home.aboutHeading.description}
             />
-            <p className="max-w-2xl text-base leading-7">{siteContent.story.paragraphOne}</p>
-            <p className="max-w-2xl text-base leading-7">{siteContent.story.paragraphTwo}</p>
+            <p className="readable-copy max-w-2xl text-base leading-7">
+              {siteContent.story.paragraphOne}
+            </p>
+            <p className="readable-copy max-w-2xl text-base leading-7">
+              {siteContent.story.paragraphTwo}
+            </p>
             <Link
               href="/about"
               className="btn-primary"
@@ -177,16 +181,16 @@ export default async function Home() {
               {siteContent.home.aboutCtaLabel}
             </Link>
           </div>
-          <div className="card-surface overflow-hidden">
-            <div className="relative aspect-[5/4] bg-[linear-gradient(180deg,rgba(4,9,20,0.82),rgba(5,12,22,0.96))]">
+          <div className="card-surface interactive-card overflow-hidden">
+            <div className="image-panel relative aspect-[5/4] bg-[linear-gradient(180deg,rgba(4,9,20,0.82),rgba(5,12,22,0.96))]">
               <Image
                 src={siteAssets.stormVisual}
                 alt="BLFSC storm artwork"
                 fill
                 sizes="(min-width: 1024px) 40vw, 100vw"
-                className="object-cover opacity-65"
+                className="image-panel-media object-cover opacity-65"
               />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent,rgba(4,9,20,0.72))]" />
+              <div className="image-panel-overlay absolute inset-0 bg-[radial-gradient(circle_at_center,transparent,rgba(4,9,20,0.72))]" />
               <div className="absolute inset-x-8 bottom-8 top-8">
                 <div className="relative h-full w-full">
                   <Image
@@ -203,7 +207,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="page-shell section-space">
+      <section className="page-shell section-rhythm section-space">
         <SectionHeading
           eyebrow={siteContent.home.merchHeading.eyebrow}
           title={siteContent.home.merchHeading.title}
@@ -223,7 +227,9 @@ export default async function Home() {
                 ))}
               </div>
             ) : null}
-            <p className="mt-6 max-w-2xl text-base leading-7">{siteContent.home.merchLead}</p>
+            <p className="readable-copy mt-6 max-w-2xl text-base leading-7">
+              {siteContent.home.merchLead}
+            </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/merch"
@@ -274,7 +280,7 @@ export default async function Home() {
       </section>
 
       {siteContent.home.pillars.length ? (
-        <section className="page-shell section-space">
+        <section className="page-shell section-rhythm section-space">
           <SectionHeading
             eyebrow={siteContent.home.pillarsHeading.eyebrow}
             title={siteContent.home.pillarsHeading.title}
@@ -285,7 +291,7 @@ export default async function Home() {
               <article key={pillar.title} className="card-surface interactive-card p-7 sm:p-8">
                 <p className="eyebrow">{pillar.eyebrow}</p>
                 <h3 className="mt-4 text-2xl leading-none sm:text-3xl">{pillar.title}</h3>
-                <p className="mt-4 text-base leading-7">{pillar.copy}</p>
+                <p className="readable-copy mt-4 text-base leading-7">{pillar.copy}</p>
               </article>
             ))}
           </div>
@@ -293,6 +299,32 @@ export default async function Home() {
       ) : null}
 
       <PortalPromo />
+
+      <section className="page-shell section-rhythm pb-3">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <article className="social-proof-card">
+            <p className="social-proof-value">Weekly</p>
+            <p className="social-proof-label">Ride cadence</p>
+            <p className="social-proof-copy">
+              Regular local ride-outs and social meetups across Adelaide.
+            </p>
+          </article>
+          <article className="social-proof-card">
+            <p className="social-proof-value">&lt;48h</p>
+            <p className="social-proof-label">Response time</p>
+            <p className="social-proof-copy">
+              Most contact enquiries get a club reply within two days.
+            </p>
+          </article>
+          <article className="social-proof-card">
+            <p className="social-proof-value">Members</p>
+            <p className="social-proof-label">Community first</p>
+            <p className="social-proof-copy">
+              Private portal access, event updates, and merch drops for approved members.
+            </p>
+          </article>
+        </div>
+      </section>
 
       <CTASection
         eyebrow={siteContent.home.contactHeading.eyebrow}
@@ -317,18 +349,24 @@ export default async function Home() {
         <div className="grid gap-3 sm:grid-cols-2">
           <a
             href={siteContent.contact.instagramUrl}
+            target="_blank"
+            rel="noreferrer"
             className="rounded-[18px] border border-white/10 bg-white/6 px-4 py-4 text-sm font-semibold text-white/78 transition hover:border-[var(--sand)] hover:text-white"
           >
             Instagram
           </a>
           <a
             href={siteContent.contact.facebookUrl}
+            target="_blank"
+            rel="noreferrer"
             className="rounded-[18px] border border-white/10 bg-white/6 px-4 py-4 text-sm font-semibold text-white/78 transition hover:border-[var(--sand)] hover:text-white"
           >
             Facebook
           </a>
           <a
             href={siteContent.contact.tiktokUrl}
+            target="_blank"
+            rel="noreferrer"
             className="rounded-[18px] border border-white/10 bg-white/6 px-4 py-4 text-sm font-semibold text-white/78 transition hover:border-[var(--sand)] hover:text-white"
           >
             TikTok

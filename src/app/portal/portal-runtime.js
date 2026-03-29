@@ -66,6 +66,7 @@ const MERCH_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 const MERCH_IMAGE_ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const CHAT_LIMIT = 60;
 const CHAT_REFRESH_MS = 15000;
+const CHAT_GROUP_WINDOW_MS = 5 * 60 * 1000;
 const ORDER_STATUS_OPTIONS = [
   { value: "submitted", label: "Submitted" },
   { value: "processing", label: "Processing" },
@@ -94,6 +95,7 @@ const state = {
   cart: [],
   chatMessages: [],
   chatAvailable: true,
+  chatLastSeenAt: "",
   profile: null,
   profileAvailable: false,
   broadcasts: [],
@@ -136,9 +138,12 @@ const els = {
   chatStatus: document.getElementById("chat-status"),
   chatEmpty: document.getElementById("chat-empty"),
   chatList: document.getElementById("chat-list"),
+  chatTab: document.querySelector('[data-portal-tab="chat"]'),
+  chatUnreadBadge: document.getElementById("chat-unread-badge"),
   chatForm: document.getElementById("chat-form"),
   chatDisplayName: document.getElementById("chat-display-name"),
   chatMessage: document.getElementById("chat-message"),
+  chatCharCount: document.getElementById("chat-char-count"),
   chatSendBtn: document.getElementById("chat-send-btn"),
   chatRefreshBtn: document.getElementById("chat-refresh-btn"),
   toast: document.getElementById("toast"),
@@ -318,6 +323,10 @@ function getDisplayNameKey() {
   return `blfsc_chat_name_${state.session?.user?.id || "guest"}`;
 }
 
+function getChatLastSeenKey() {
+  return `blfsc_chat_last_seen_${state.session?.user?.id || "guest"}`;
+}
+
 function saveDisplayName(value) {
   localStorage.setItem(getDisplayNameKey(), value);
 }
@@ -327,6 +336,20 @@ function loadDisplayName() {
     localStorage.getItem(getDisplayNameKey()) ||
     deriveDisplayName(state.profile?.full_name || state.session?.user?.email || "")
   );
+}
+
+function loadChatLastSeenAt() {
+  return String(localStorage.getItem(getChatLastSeenKey()) || "");
+}
+
+function saveChatLastSeenAt(value) {
+  const normalized = String(value || "").trim();
+  state.chatLastSeenAt = normalized;
+  if (normalized) {
+    localStorage.setItem(getChatLastSeenKey(), normalized);
+    return;
+  }
+  localStorage.removeItem(getChatLastSeenKey());
 }
 
 function showToast(message, isError = false) {
@@ -356,6 +379,90 @@ function clearAuthMessage() {
 function setChatStatus(message, isError = false) {
   els.chatStatus.textContent = message;
   els.chatStatus.className = `portal-chat-status${isError ? " is-error" : ""}`;
+}
+
+function formatChatCountLabel(count) {
+  return `${count} message${count === 1 ? "" : "s"}`;
+}
+
+function getChatInitials(displayName = "", email = "") {
+  const source = String(displayName || email || "Member")
+    .trim()
+    .replace(/\s+/g, " ");
+  const parts = source.split(" ").filter(Boolean);
+  if (!parts.length) return "M";
+  if (parts.length === 1) {
+    return (
+      parts[0]
+        .replace(/[^a-z0-9]/gi, "")
+        .slice(0, 2)
+        .toUpperCase() || "M"
+    );
+  }
+  const first = parts[0]?.[0] || "";
+  const last = parts[parts.length - 1]?.[0] || "";
+  return `${first}${last}`.toUpperCase();
+}
+
+function updateChatCharCount() {
+  if (!els.chatCharCount || !els.chatMessage) return;
+  const maxLength = Number(els.chatMessage.maxLength || 500);
+  const used = String(els.chatMessage.value || "").length;
+  els.chatCharCount.textContent = `${used}/${maxLength}`;
+  els.chatCharCount.className = "portal-chat-char-count";
+  if (used >= maxLength) {
+    els.chatCharCount.classList.add("is-over-limit");
+  } else if (used >= Math.floor(maxLength * 0.8)) {
+    els.chatCharCount.classList.add("is-near-limit");
+  }
+}
+
+function getChatUnreadDividerIndex() {
+  if (!state.chatMessages.length) return -1;
+  const seenMs = Date.parse(state.chatLastSeenAt || "");
+  if (Number.isNaN(seenMs)) return -1;
+  return state.chatMessages.findIndex((message) => {
+    const messageMs = Date.parse(String(message.created_at || ""));
+    if (Number.isNaN(messageMs)) return false;
+    if (message.user_id === state.session?.user?.id) return false;
+    return messageMs > seenMs;
+  });
+}
+
+function getUnreadChatCount() {
+  if (!state.chatMessages.length) return 0;
+  const seenMs = Date.parse(state.chatLastSeenAt || "");
+  if (Number.isNaN(seenMs)) return 0;
+  return state.chatMessages.reduce((count, message) => {
+    const messageMs = Date.parse(String(message.created_at || ""));
+    if (Number.isNaN(messageMs)) return count;
+    if (message.user_id === state.session?.user?.id) return count;
+    if (messageMs <= seenMs) return count;
+    return count + 1;
+  }, 0);
+}
+
+function updateChatUnreadBadge() {
+  if (!els.chatUnreadBadge || !els.chatTab) return;
+  const unreadCount = getUnreadChatCount();
+  if (unreadCount <= 0) {
+    els.chatUnreadBadge.classList.add("hidden");
+    els.chatTab.setAttribute("aria-label", "Chat");
+    return;
+  }
+
+  const badgeText = unreadCount > 99 ? "99+" : String(unreadCount);
+  els.chatUnreadBadge.textContent = badgeText;
+  els.chatUnreadBadge.classList.remove("hidden");
+  els.chatTab.setAttribute("aria-label", `Chat (${badgeText} unread)`);
+}
+
+function markChatAsSeen() {
+  const latestMessage = state.chatMessages[state.chatMessages.length - 1];
+  const latestCreatedAt = String(latestMessage?.created_at || "").trim();
+  if (!latestCreatedAt) return;
+  saveChatLastSeenAt(latestCreatedAt);
+  updateChatUnreadBadge();
 }
 
 function setProfileStatus(message, isError = false) {
@@ -1062,34 +1169,65 @@ function renderChatMessages() {
   els.chatList.innerHTML = "";
   if (!state.chatAvailable) {
     els.chatEmpty.classList.add("hidden");
+    updateChatUnreadBadge();
     return;
   }
   if (!state.chatMessages.length) {
     els.chatEmpty.classList.remove("hidden");
+    updateChatUnreadBadge();
     return;
   }
 
   els.chatEmpty.classList.add("hidden");
-  state.chatMessages.forEach((message) => {
+  const unreadDividerIndex = getChatUnreadDividerIndex();
+  state.chatMessages.forEach((message, index) => {
+    if (index === unreadDividerIndex) {
+      const divider = document.createElement("div");
+      divider.className = "portal-chat-divider";
+      divider.innerHTML =
+        '<span class="portal-chat-divider-line" aria-hidden="true"></span><span class="portal-chat-divider-label">New messages</span><span class="portal-chat-divider-line" aria-hidden="true"></span>';
+      els.chatList.appendChild(divider);
+    }
+    const previous = state.chatMessages[index - 1];
+    const createdAtMs = Date.parse(String(message.created_at || ""));
+    const previousMs = Date.parse(String(previous?.created_at || ""));
+    const grouped =
+      Boolean(previous) &&
+      previous.user_id === message.user_id &&
+      !Number.isNaN(createdAtMs) &&
+      !Number.isNaN(previousMs) &&
+      createdAtMs - previousMs <= CHAT_GROUP_WINDOW_MS;
     const own = message.user_id === state.session?.user?.id;
+    const displayName = message.display_name || "Member";
+    const userEmail = message.user_email || "Member account";
+    const createdAt = formatDateTime(message.created_at);
+    const initials = getChatInitials(displayName, userEmail);
     const item = document.createElement("article");
-    item.className = `portal-chat-item${own ? " is-own" : ""}`;
+    item.className = `portal-chat-item${own ? " is-own" : ""}${grouped ? " is-grouped" : ""}`;
     item.innerHTML = `
-      <div class="portal-chat-meta">
-        <div>
-          <div class="portal-chat-name">${escapeHtml(message.display_name || "Member")}</div>
-          <div class="portal-chat-email">${escapeHtml(message.user_email || "Member account")}</div>
+      <div class="portal-chat-avatar" aria-hidden="true">${escapeHtml(initials)}</div>
+      <div class="portal-chat-bubble">
+        <div class="portal-chat-meta">
+          <div class="portal-chat-author">
+            <div class="portal-chat-headline">
+              <div class="portal-chat-name">${escapeHtml(displayName)}</div>
+              ${own ? '<span class="portal-chat-you-badge">You</span>' : ""}
+            </div>
+            <div class="portal-chat-email">${escapeHtml(userEmail)}</div>
+          </div>
+          <div class="portal-chat-time"><time>${escapeHtml(createdAt)}</time></div>
         </div>
-        <div class="portal-chat-time">${escapeHtml(formatDateTime(message.created_at))}</div>
+        <p class="portal-chat-message">${escapeHtml(message.message || "")}</p>
+        ${own ? '<div class="portal-chat-item-actions"><p class="portal-chat-item-note">Visible to signed-in members</p><button class="button button-secondary button-small chat-delete-btn" type="button" aria-label="Delete your message">Delete</button></div>' : ""}
       </div>
-      <p class="portal-chat-message">${escapeHtml(message.message || "")}</p>
-      ${own ? '<div class="portal-chat-actions"><span class="portal-card-copy portal-card-copy-tight">Your message</span><button class="button button-secondary button-small chat-delete-btn" type="button">Delete</button></div>' : ""}
     `;
     item
       .querySelector(".chat-delete-btn")
       ?.addEventListener("click", () => deleteChatMessage(message.id));
     els.chatList.appendChild(item);
   });
+  els.chatList.scrollTop = els.chatList.scrollHeight;
+  updateChatUnreadBadge();
 }
 
 function cloneMerchAdminDefaults() {
@@ -1484,6 +1622,17 @@ function setActivePane(nextPane, updateHash = true) {
   });
   if (updateHash) history.replaceState(null, "", `#${pane}`);
   revealPaneRevealNodes(pane);
+  if (pane === "chat") {
+    const unreadDividerIndex = getChatUnreadDividerIndex();
+    if (unreadDividerIndex >= 0) {
+      markChatAsSeen();
+      renderChatMessages();
+      setChatStatus(
+        `Marked new messages as read. Member chat has ${formatChatCountLabel(state.chatMessages.length)}.`,
+      );
+    }
+    updateChatUnreadBadge();
+  }
   if (pane === "admin") {
     setAdminSection(state.adminSection || "overview");
   }
@@ -2301,10 +2450,13 @@ function renderInviteResults() {
 function resetChatState() {
   state.chatMessages = [];
   state.chatAvailable = true;
+  state.chatLastSeenAt = "";
   chatFetchInFlight = false;
   els.chatList.innerHTML = "";
   els.chatEmpty.classList.add("hidden");
   els.chatForm.reset();
+  updateChatCharCount();
+  updateChatUnreadBadge();
   setChatComposerEnabled(false);
   setChatStatus("Signed-in members can post updates, quick notices, and club chatter here.");
 }
@@ -2654,9 +2806,19 @@ async function fetchChatMessages({ silent = false } = {}) {
   state.chatAvailable = true;
   state.chatMessages = data || [];
   setChatComposerEnabled(true);
+  const hadUnread = getChatUnreadDividerIndex() >= 0;
   renderChatMessages();
-  if (!silent)
-    setChatStatus("Member chat is live. Messages refresh automatically every 15 seconds.");
+  if (state.activePane === "chat" && document.visibilityState === "visible") {
+    markChatAsSeen();
+    if (hadUnread) {
+      renderChatMessages();
+    }
+  }
+  if (!silent) {
+    setChatStatus(
+      `Member chat is live with ${formatChatCountLabel(state.chatMessages.length)}. Refreshes every 15 seconds.`,
+    );
+  }
 }
 
 async function deleteChatMessage(messageId) {
@@ -2800,6 +2962,17 @@ async function loadMemberProfile() {
   }
 
   const rawProfile = result.data;
+  if (!rawProfile) {
+    console.warn("loadMemberProfile: select/upsert returned no profile row");
+    setProfileStatus(
+      "Your member profile could not be loaded. Try refreshing the page, or contact an admin if this continues.",
+      true,
+    );
+    fillProfileForm({ email: state.session.user.email || "" });
+    setProfileFormEnabled(false);
+    renderAdminDashboard();
+    return;
+  }
   const isAdminEffective = coerceMemberIsAdmin(rawProfile.is_admin);
   state.profile = { ...rawProfile, is_admin: isAdminEffective };
   state.profileAvailable = true;
@@ -2993,6 +3166,8 @@ async function setAuthedUI(session) {
     els.memberApp.classList.remove("hidden");
     els.memberEmailDisplay.textContent = session.user.email || "Member";
     els.profileEmail.value = session.user.email || "";
+    state.chatLastSeenAt = loadChatLastSeenAt();
+    updateChatUnreadBadge();
     els.chatDisplayName.value = loadDisplayName();
     setChatComposerEnabled(true);
     loadCart();
@@ -3017,6 +3192,7 @@ async function setAuthedUI(session) {
   resetMemberDirectoryState();
   resetInviteState();
   resetChatState();
+  saveChatLastSeenAt("");
 }
 
 async function handleSignIn(event) {
@@ -3227,8 +3403,11 @@ async function handleChatSubmit(event) {
   }
   saveDisplayName(displayName);
   els.chatMessage.value = "";
+  updateChatCharCount();
   await fetchChatMessages({ silent: true });
-  setChatStatus("Message posted. Member chat refreshes automatically every 15 seconds.");
+  setChatStatus(
+    `Message posted. Member chat now has ${formatChatCountLabel(state.chatMessages.length)}.`,
+  );
   showToast("Message posted to member chat.");
 }
 
@@ -3698,6 +3877,7 @@ els.chatDisplayName.addEventListener("change", (event) => {
   const value = event.target.value.trim();
   if (value) saveDisplayName(value);
 });
+els.chatMessage.addEventListener("input", updateChatCharCount);
 
 document.querySelectorAll("[data-portal-tab]").forEach((button) => {
   button.addEventListener("click", () => {
@@ -3762,6 +3942,7 @@ db.auth.onAuthStateChange((_event, session) => {
   resetSiteContentState();
   resetInviteState();
   resetChatState();
+  updateChatCharCount();
   renderAdminDashboard();
   const { data } = await db.auth.getSession();
   setAuthedUI(data.session);

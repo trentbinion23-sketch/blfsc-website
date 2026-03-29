@@ -163,7 +163,12 @@
           <nav class="portal-tabs" aria-label="Member sections">
             <button class="portal-tab is-active" type="button" data-portal-tab="shop">Shop</button>
             <button class="portal-tab" type="button" data-portal-tab="account">Account</button>
-            <button class="portal-tab" type="button" data-portal-tab="chat">Chat</button>
+            <button class="portal-tab" type="button" data-portal-tab="chat">
+              Chat
+              <span id="chat-unread-badge" class="portal-tab-badge hidden" aria-label="Unread chat messages">
+                0
+              </span>
+            </button>
             <button
               id="admin-tab"
               class="portal-tab is-locked"
@@ -489,17 +494,21 @@
                     id="chat-message"
                     name="chat-message"
                     class="input textarea"
+                    rows="5"
                     maxlength="500"
                     placeholder="Post a member update, ride note, or quick announcement"
                     required
                   ></textarea>
                 </label>
 
-                <div class="portal-chat-actions">
+                <div class="portal-chat-form-meta">
                   <p class="portal-card-copy portal-card-copy-tight">
                     Messages are visible to signed-in members only. Use this for club chat, notices,
                     and quick coordination.
                   </p>
+                  <p id="chat-char-count" class="portal-chat-char-count">0/500</p>
+                </div>
+                <div class="portal-chat-form-actions">
                   <button id="chat-send-btn" class="button button-primary" type="submit">
                     Send message
                   </button>
@@ -1297,9 +1306,9 @@
                   <h3 class="brand-font">Generate one-time invite links</h3>
                 </div>
                 <p class="portal-card-copy">
-                  Paste one email per line. If you also have a mobile number, paste it on the
-                  matching line and the portal will text the same invite link to that member. Email
-                  is still the account identity for the Supabase invite.
+                  Paste one email per line (that email is the account identity). Optional: put a
+                  phone on the same line; the portal creates one signup link and texts it when Twilio
+                  is configured (no automatic email on those rows, so the link stays valid).
                 </p>
                 <form id="member-invite-form" class="stack-form">
                   <label class="field" for="invite-emails">
@@ -1334,9 +1343,11 @@
                     <div class="field">
                       <span class="field-label">How it works</span>
                       <div class="portal-lock-note">
-                        Supabase sends an invitation email to each new address (configure Auth email
-                        or SMTP in your project). If you add a matching phone and Twilio is set up,
-                        the portal texts the invite link as well.
+                        <strong>Email only:</strong> Supabase sends the invitation email (configure
+                        Auth email or SMTP). <strong>Email + phone on the same line:</strong> one invite
+                        link is created and texted via Twilio when configured; no automatic email (a
+                        second step would invalidate the link). Use <strong>Copy link</strong> in results
+                        if you also want to email that same link.
                       </div>
                     </div>
                   </div>

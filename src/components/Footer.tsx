@@ -45,6 +45,8 @@ export function Footer({ content }: FooterProps) {
               <li key={item.label}>
                 <a
                   href={item.href}
+                  target="_blank"
+                  rel="noreferrer"
                   className="text-sm font-semibold text-[var(--foreground)] hover:text-[var(--sand)]"
                 >
                   {item.label}

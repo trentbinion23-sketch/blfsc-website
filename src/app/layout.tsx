@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Barlow_Condensed, Source_Sans_3 } from "next/font/google";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
+import { BackToTopButton } from "@/components/BackToTopButton";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MobileConversionBar } from "@/components/MobileConversionBar";
+import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { buildMetadata } from "@/lib/seo";
 import { getPublicSiteContent } from "@/lib/site-content";
@@ -33,6 +35,10 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${bodyFont.variable} ${displayFont.variable}`}>
       <body className="min-h-screen bg-background text-foreground antialiased">
+        <a href="#site-main" className="skip-link">
+          Skip to content
+        </a>
+        <ScrollProgressBar />
         <AnalyticsProvider />
         <ServiceWorkerRegistration />
         <div className="flex min-h-screen flex-col">
@@ -55,9 +61,12 @@ export default async function RootLayout({
             </div>
           ) : null}
           <Header />
-          <main className="flex-1">{children}</main>
+          <main id="site-main" className="flex-1">
+            {children}
+          </main>
           <Footer content={siteContent} />
         </div>
+        <BackToTopButton />
         <MobileConversionBar />
       </body>
     </html>

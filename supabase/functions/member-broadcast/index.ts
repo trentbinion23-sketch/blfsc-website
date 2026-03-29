@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 import nodemailer from "npm:nodemailer@6.10.1";
 import { applyRateLimit, getClientIp } from "../_shared/security.ts";
 
@@ -350,8 +350,16 @@ Deno.serve(
         });
       } catch (error) {
         console.error(
-          "member-broadcast: consume_edge_rate_limit unavailable; skipping rate limit",
+          "member-broadcast: consume_edge_rate_limit failed",
           error instanceof Error ? error.message : error,
+        );
+        return json(
+          {
+            error:
+              "Rate limiting is temporarily unavailable. Try again in a moment, or verify the consume_edge_rate_limit migration is applied.",
+          },
+          503,
+          origin,
         );
       }
       if (!rateLimit.allowed) {
