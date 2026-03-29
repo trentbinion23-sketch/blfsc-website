@@ -11,9 +11,7 @@ test.describe("accessibility checks", () => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForSelector("main");
 
-    const { violations } = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa"])
-      .analyze();
+    const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
 
     const seriousViolations = violations.filter(
       (violation) => violation.impact === "serious" || violation.impact === "critical",

@@ -164,16 +164,33 @@ async function checkLegacyPagesProjectDeleted() {
     return "Skipped Cloudflare Pages project audit (set CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN in env / .env.local, or run `wrangler login` for local OAuth).";
   }
 
-  const { payload } = await callCloudflareApi(
+  const { response, payload } = await callCloudflareApi(
     `/accounts/${cloudflareAccountId}/pages/projects/${legacyPagesProject}`,
   );
 
-  assert(
-    hasCloudflareErrorCode(payload, 8000007),
-    `Unexpected Cloudflare response while checking retired Pages project "${legacyPagesProject}".`,
-  );
+  const gone =
+    hasCloudflareErrorCode(payload, 8000007) ||
+    response.status === 404 ||
+    (payload?.success === false &&
+      Array.isArray(payload.errors) &&
+      payload.errors.some((error) => /not\s*found|does not exist/i.test(String(error.message ?? ""))));
 
-  return `Verified legacy Pages project "${legacyPagesProject}" is gone.`;
+  if (gone) {
+    return `Verified legacy Pages project "${legacyPagesProject}" is gone.`;
+  }
+
+  if (payload?.success === true && payload?.result?.name) {
+    console.warn(
+      `[audit] Legacy Pages project "${legacyPagesProject}" still exists in Cloudflare. Retire it when you no longer need the old hostname; portal/site checks above already passed.`,
+    );
+    return `Warning: legacy Pages project "${legacyPagesProject}" is still present (non-blocking).`;
+  }
+
+  const detail = JSON.stringify(payload?.errors ?? payload);
+  assert(
+    false,
+    `Unexpected Cloudflare response while checking retired Pages project "${legacyPagesProject}" (${response.status}): ${detail}`,
+  );
 }
 
 async function checkLegacyWorkerDeleted() {
