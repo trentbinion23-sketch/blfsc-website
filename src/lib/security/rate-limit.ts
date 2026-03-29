@@ -1,6 +1,7 @@
 type Bucket = number[];
 
 const buckets = new Map<string, Bucket>();
+const seenLocalFallbackReasons = new Set<string>();
 
 type RateLimitInput = { key: string; maxRequests: number; windowMs: number };
 
@@ -8,6 +9,12 @@ type RateLimitResult = {
   allowed: boolean;
   retryAfterMs: number;
 };
+
+function warnLocalFallback(reason: string) {
+  if (seenLocalFallbackReasons.has(reason)) return;
+  seenLocalFallbackReasons.add(reason);
+  console.warn(`[rate-limit] Using local fallback limiter: ${reason}`);
+}
 
 function consumeLocalRateLimit(input: RateLimitInput): RateLimitResult {
   const now = Date.now();
@@ -34,7 +41,10 @@ function consumeLocalRateLimit(input: RateLimitInput): RateLimitResult {
 async function consumeSharedRateLimit(input: RateLimitInput): Promise<RateLimitResult | null> {
   const supabaseUrl = process.env.SUPABASE_URL?.trim();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!supabaseUrl || !serviceRoleKey) return null;
+  if (!supabaseUrl || !serviceRoleKey) {
+    warnLocalFallback("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing");
+    return null;
+  }
 
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/consume_edge_rate_limit`, {
     method: "POST",
@@ -70,8 +80,9 @@ export async function consumeRateLimit(input: RateLimitInput): Promise<RateLimit
   try {
     const sharedResult = await consumeSharedRateLimit(input);
     if (sharedResult) return sharedResult;
-  } catch {
-    // Fall back to local buckets if shared RPC is unavailable.
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "unknown shared limiter error";
+    warnLocalFallback(detail);
   }
 
   return consumeLocalRateLimit(input);

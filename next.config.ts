@@ -8,6 +8,16 @@ const withBundleAnalyzer = createBundleAnalyzer({
 });
 
 const allowCloudflareInsights = process.env.CSP_ALLOW_CLOUDFLARE_INSIGHTS === "true";
+const configuredPosthogOrigin = (() => {
+  const host = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim();
+  if (!host) return null;
+
+  try {
+    return new URL(host).origin;
+  } catch {
+    return null;
+  }
+})();
 const connectSrcParts = [
   "'self'",
   "https://*.supabase.co",
@@ -24,6 +34,14 @@ const scriptSrcParts = [
   "https://us.i.posthog.com",
   "https://*.posthog.com",
 ];
+if (configuredPosthogOrigin) {
+  if (!connectSrcParts.includes(configuredPosthogOrigin)) {
+    connectSrcParts.push(configuredPosthogOrigin);
+  }
+  if (!scriptSrcParts.includes(configuredPosthogOrigin)) {
+    scriptSrcParts.push(configuredPosthogOrigin);
+  }
+}
 if (allowCloudflareInsights) {
   connectSrcParts.push("https://cloudflareinsights.com");
   scriptSrcParts.push("https://static.cloudflareinsights.com");

@@ -168,6 +168,8 @@ function buildOrderEmail(order: OrderRow, portalHint: string) {
 
 async function sendOrderEmail(input: { to: string; bcc: string[]; subject: string; text: string }) {
   const apiKey = Deno.env.get("RESEND_API_KEY");
+  // Keep this aligned with member-broadcast and .env.example notes.
+  // This function uses BROADCAST_FROM_EMAIL (not CONTACT_FROM_EMAIL).
   const from = Deno.env.get("BROADCAST_FROM_EMAIL");
 
   if (apiKey && from) {

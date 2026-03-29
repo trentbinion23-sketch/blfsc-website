@@ -1,6 +1,7 @@
 const fallbackPublicSiteUrl = "https://blfsc.com";
 const fallbackSupabaseUrl = "https://example.invalid";
 const fallbackSupabaseAnonKey = "missing-public-anon-key";
+const fallbackPortalOwnerEmail = "trentbinion23@hotmail.com";
 
 function readEnv(value: string | undefined, fallback: string) {
   return value?.trim() || fallback;
@@ -42,7 +43,7 @@ export function buildSiteUrl(path = "/") {
 /** Must match portal_bootstrap_owner_email_normalized() in Supabase migrations. */
 export const portalOwnerEmailNormalized = readEnv(
   process.env.NEXT_PUBLIC_PORTAL_OWNER_EMAIL,
-  "trentbinion23@hotmail.com",
+  fallbackPortalOwnerEmail,
 )
   .trim()
   .toLowerCase();

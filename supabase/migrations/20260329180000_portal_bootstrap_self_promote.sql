@@ -1,6 +1,7 @@
 begin;
 
--- Must match site NEXT_PUBLIC_PORTAL_OWNER_EMAIL (default trentbinion23@hotmail.com).
+-- Must match site NEXT_PUBLIC_PORTAL_OWNER_EMAIL
+-- (see .env.example and src/lib/site-config.ts fallback).
 create or replace function public.portal_bootstrap_owner_email_normalized()
 returns text
 language sql
