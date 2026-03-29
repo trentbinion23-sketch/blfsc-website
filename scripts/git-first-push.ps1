@@ -12,7 +12,8 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $repoRoot.Path
 
 function Write-Step([string]$msg) {
-  Write-Host "`n==> $msg" -ForegroundColor Cyan
+  Write-Host ""
+  Write-Host "==> $msg" -ForegroundColor Cyan
 }
 
 function Test-GhAuth {
@@ -22,9 +23,12 @@ function Test-GhAuth {
 
 $dirty = git status --porcelain
 if ($dirty) {
-  Write-Host "`nUncommitted changes — commit or stash first, then run again:`n" -ForegroundColor Yellow
+  Write-Host ""
+  Write-Host 'Uncommitted changes: commit or stash first, then run again:' -ForegroundColor Yellow
+  Write-Host ""
   Write-Host "  git add -A" -ForegroundColor White
-  Write-Host "  git commit -m `"chore: describe your change`"`n" -ForegroundColor White
+  Write-Host '  git commit -m "chore: describe your change"' -ForegroundColor White
+  Write-Host ""
   exit 1
 }
 
@@ -38,10 +42,14 @@ if (-not $hasOrigin) {
     exit 1
   }
   if (-not (Test-GhAuth)) {
-    Write-Host "`nOne-time login (opens browser):" -ForegroundColor Yellow
-    Write-Host "  gh auth login`n" -ForegroundColor White
+    Write-Host ""
+    Write-Host "One-time login (opens browser):" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  gh auth login" -ForegroundColor White
+    Write-Host ""
     Write-Host "Choose: GitHub.com -> HTTPS -> Login with browser." -ForegroundColor Gray
-    Write-Host "Then run: npm run git:publish`n" -ForegroundColor White
+    Write-Host "Then run: npm run git:publish" -ForegroundColor White
+    Write-Host ""
     exit 1
   }
 
@@ -49,12 +57,16 @@ if (-not $hasOrigin) {
   Write-Step "Creating private repo '$dirName' on your account and pushing main..."
   gh repo create $dirName --private --source=. --remote=origin --push --description "BLFSC site (blfsc.com)"
   if ($LASTEXITCODE -ne 0) {
-    Write-Host "`nIf the repo name is taken, create it on github.com then run:" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "If the repo name is taken, create it on github.com then run:" -ForegroundColor Yellow
     Write-Host "  git remote add origin https://github.com/YOU/REPO.git" -ForegroundColor White
-    Write-Host "  npm run git:publish`n" -ForegroundColor White
+    Write-Host "  npm run git:publish" -ForegroundColor White
+    Write-Host ""
     exit $LASTEXITCODE
   }
-  Write-Host "`nDone. Open the URL shown above or run: gh repo view --web`n" -ForegroundColor Green
+  Write-Host ""
+  Write-Host "Done. Open the URL shown above or run: gh repo view --web" -ForegroundColor Green
+  Write-Host ""
   exit 0
 }
 
@@ -66,9 +78,13 @@ if ($Force) {
 }
 
 if ($LASTEXITCODE -ne 0) {
-  Write-Host "`nPush failed. If GitHub already has different commits and you mean to replace them:" -ForegroundColor Yellow
-  Write-Host "  npm run git:publish:force`n" -ForegroundColor White
+  Write-Host ""
+  Write-Host "Push failed. If GitHub already has different commits and you mean to replace them:" -ForegroundColor Yellow
+  Write-Host "  npm run git:publish:force" -ForegroundColor White
+  Write-Host ""
   exit $LASTEXITCODE
 }
 
-Write-Host "`nPush OK.`n" -ForegroundColor Green
+Write-Host ""
+Write-Host 'Push OK.' -ForegroundColor Green
+Write-Host ""
