@@ -51,7 +51,7 @@ export function MobileNav({ items }: MobileNavProps) {
                     href={item.href}
                     className={cn(
                       "block rounded-2xl px-4 py-3 text-base font-semibold transition",
-                      active ? "bg-[var(--moss)] text-white" : "hover:bg-white/8",
+                      active ? "bg-[#2559cf] text-white" : "hover:bg-white/8",
                     )}
                     onClick={() => setOpen(false)}
                   >
