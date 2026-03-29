@@ -173,7 +173,9 @@ async function checkLegacyPagesProjectDeleted() {
     response.status === 404 ||
     (payload?.success === false &&
       Array.isArray(payload.errors) &&
-      payload.errors.some((error) => /not\s*found|does not exist/i.test(String(error.message ?? ""))));
+      payload.errors.some((error) =>
+        /not\s*found|does not exist/i.test(String(error.message ?? "")),
+      ));
 
   if (gone) {
     return `Verified legacy Pages project "${legacyPagesProject}" is gone.`;
