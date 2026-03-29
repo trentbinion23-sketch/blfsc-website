@@ -75,7 +75,7 @@ const ORDER_STATUS_OPTIONS = [
   { value: "cancelled", label: "Cancelled" },
 ];
 const ADMIN_LOCKED_MESSAGE =
-  "Admin tools are locked for this account. If this should be the BLFSC admin login, sign out, refresh the portal, and sign back in so the latest permissions load.";
+  "Admin tools are locked on this login. Sign out, refresh the page, and sign back in if you use the site owner account.";
 
 const ADMIN_JUMP_TARGET_TO_SECTION = {
   "admin-overview": "overview",
@@ -376,35 +376,46 @@ function clearAuthMessage() {
   els.authMessage.className = "portal-alert hidden";
 }
 
-/** Maps network/CORS-style failures to something actionable (raw message is often "Failed to fetch"). */
-function formatSignInError(error) {
-  const raw = String(error?.message || error || "");
-  const lower = raw.toLowerCase();
-  const blocked =
-    lower.includes("failed to fetch") ||
-    lower.includes("networkerror") ||
-    lower.includes("network request failed") ||
-    lower.includes("load failed") ||
-    error?.name === "AuthRetryableFetchError";
-  if (blocked) {
-    let altOrigin = "";
-    try {
-      const canon = new URL(PUBLIC_SITE_URL);
-      const altHost = canon.host.startsWith("www.")
-        ? canon.host.replace(/^www\./, "")
-        : `www.${canon.host}`;
-      altOrigin = `${canon.protocol}//${altHost}`;
-    } catch {
-      altOrigin = "the other hostname (www vs non-www)";
-    }
-    return (
-      "Could not reach the sign-in service (request blocked or network error). " +
-      `Try signing in from ${altOrigin}/portal if you are on the opposite hostname, pause VPN or strict privacy/ad blockers, ` +
-      "and in Supabase → Project Settings → API allow requests from your live site origins (both www and non-www). " +
-      "If it still fails, contact the club."
-    );
+/** Maps Supabase Auth errors to short portal copy; keeps raw messages for logging/analytics elsewhere. */
+function userFacingSignInError(error) {
+  const msg = String(error?.message || "").toLowerCase();
+  const status = error?.status;
+  if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
+    return "That email or password does not match our records. Try again or reset your password.";
   }
-  return raw || "Sign-in failed.";
+  if (msg.includes("email not confirmed")) {
+    return "Confirm your email from the link we sent, then try signing in again.";
+  }
+  if (msg.includes("too many requests") || msg.includes("rate limit") || status === 429) {
+    return "Too many sign-in attempts. Wait a minute and try again.";
+  }
+  if (
+    msg.includes("network") ||
+    msg.includes("fetch") ||
+    msg.includes("failed to fetch") ||
+    msg.includes("load failed")
+  ) {
+    return "We could not reach the server. Check your connection and try again.";
+  }
+  return "Could not sign in. Check your email and password, then try again.";
+}
+
+function formatBootstrapNotes(bootstrapResult, bootstrapAdminError) {
+  if (bootstrapAdminError) {
+    return `Admin unlock check failed: ${bootstrapAdminError.message || String(bootstrapAdminError)}`;
+  }
+  if (!bootstrapResult || typeof bootstrapResult !== "object") return "";
+  if (bootstrapResult.skipped && bootstrapResult.reason === "email_not_allowlisted") {
+    const em = bootstrapResult.resolved_email || "?";
+    return `This sign-in email (${em}) is not the allowlisted owner address. Use the exact owner email configured by NEXT_PUBLIC_PORTAL_OWNER_EMAIL and the matching migration allowlist entry.`;
+  }
+  if (bootstrapResult.ok === false && bootstrapResult.detail) {
+    return `Admin unlock: ${bootstrapResult.detail}`;
+  }
+  if (bootstrapResult.ok === false && bootstrapResult.reason === "no_email") {
+    return "This session has no email. Sign out and sign in again with email and password.";
+  }
+  return "";
 }
 
 function setChatStatus(message, isError = false) {
@@ -2876,21 +2887,12 @@ async function loadMemberProfile() {
   const { data: bootstrapResult, error: bootstrapAdminError } = await db.rpc(
     "ensure_bootstrap_portal_admin",
   );
-  let bootstrapDiagnostic = "";
   if (bootstrapAdminError) {
     console.warn("ensure_bootstrap_portal_admin:", bootstrapAdminError);
-    bootstrapDiagnostic = ` Admin unlock could not run: ${bootstrapAdminError.message || String(bootstrapAdminError)}.`;
   } else if (bootstrapResult && typeof bootstrapResult === "object") {
     console.info("ensure_bootstrap_portal_admin:", bootstrapResult);
-    if (bootstrapResult.skipped && bootstrapResult.reason === "email_not_allowlisted") {
-      bootstrapDiagnostic = ` Admin unlock skipped: database saw sign-in email "${bootstrapResult.resolved_email || "?"}", which is not the allowlisted owner address. Use the exact owner email configured by NEXT_PUBLIC_PORTAL_OWNER_EMAIL (and matching migration allowlist entry).`;
-    } else if (bootstrapResult.ok === false && bootstrapResult.detail) {
-      bootstrapDiagnostic = ` Admin unlock failed: ${bootstrapResult.detail}`;
-    } else if (bootstrapResult.ok === false && bootstrapResult.reason === "no_email") {
-      bootstrapDiagnostic =
-        " Admin unlock failed: no email on this session (JWT/auth.users). Try signing out and signing in with email/password.";
-    }
   }
+  const bootstrapNote = formatBootstrapNotes(bootstrapResult, bootstrapAdminError);
 
   let result = await db
     .from(PROFILE_TABLE)
@@ -2966,7 +2968,7 @@ async function loadMemberProfile() {
   const profileEmailNorm = String(result.data?.email || "")
     .trim()
     .toLowerCase();
-  let selfPromoteDiagnostic = "";
+  let selfPromoteNote = "";
   if (
     result.data &&
     !coerceMemberIsAdmin(result.data.is_admin) &&
@@ -2979,7 +2981,7 @@ async function loadMemberProfile() {
       .eq("user_id", state.session.user.id);
     if (promoteErr) {
       console.warn("portal owner self-promote:", promoteErr);
-      selfPromoteDiagnostic = ` Could not unlock admin via profile update: ${promoteErr.message || String(promoteErr)}.`;
+      selfPromoteNote = `Could not save admin access: ${promoteErr.message || String(promoteErr)}.`;
     } else {
       const promoted = await db
         .from(PROFILE_TABLE)
@@ -3016,7 +3018,7 @@ async function loadMemberProfile() {
     setAdminAccessBanner("");
   } else {
     setAdminAccessBanner(
-      [ADMIN_LOCKED_MESSAGE, bootstrapDiagnostic, selfPromoteDiagnostic].filter(Boolean).join(""),
+      [ADMIN_LOCKED_MESSAGE, bootstrapNote, selfPromoteNote].filter(Boolean).join(" "),
     );
   }
   if (state.profile.is_admin) {
@@ -3029,13 +3031,19 @@ async function loadMemberProfile() {
     resetInviteState();
     resetSiteContentState();
   }
-  const profileStatusError =
-    Boolean(bootstrapDiagnostic && !state.profile.is_admin) ||
-    Boolean(selfPromoteDiagnostic && !state.profile.is_admin);
-  setProfileStatus(
-    `${state.profile.approved ? "Approved member access is active." : "Your profile is waiting for approval."}${state.profile.is_admin ? " Admin tools are enabled on your account." : " Admin tools are locked for this account. Sign out, refresh, and sign back in if this should be the BLFSC admin login."}${bootstrapDiagnostic}${selfPromoteDiagnostic}`,
-    profileStatusError,
-  );
+  const baseApproval = state.profile.approved
+    ? "Approved member access is active."
+    : "Your profile is waiting for approval.";
+  const detailForNonAdmin = [bootstrapNote, selfPromoteNote].filter(Boolean).join(" ");
+  const profileStatusError = Boolean(detailForNonAdmin && !state.profile.is_admin);
+  if (state.profile.is_admin) {
+    setProfileStatus(`${baseApproval} Admin tools are enabled on your account.`);
+  } else {
+    setProfileStatus(
+      detailForNonAdmin ? `${baseApproval} ${detailForNonAdmin}` : baseApproval,
+      profileStatusError,
+    );
+  }
   if (state.profile.full_name) {
     els.chatDisplayName.value = loadDisplayName();
   }
@@ -3230,21 +3238,23 @@ async function handleSignIn(event) {
   event.preventDefault();
   clearAuthMessage();
   const btn = document.getElementById("signin-btn");
-  btn.disabled = true;
-  btn.textContent = "Signing in...";
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
   syncPasswordUsername(email);
-  const { error } = await db.auth.signInWithPassword({ email, password });
-  btn.disabled = false;
-  btn.textContent = "Access members area";
-  if (error) {
-    track("portal_signin_failed", { reason: error.message || "unknown" });
-    showAuthMessage(formatSignInError(error), true);
-    return;
+  btn.disabled = true;
+  btn.textContent = "Signing in...";
+  try {
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) {
+      track("portal_signin_failed", { reason: error.message || "unknown" });
+      showAuthMessage(userFacingSignInError(error), true);
+      return;
+    }
+    track("portal_signin_success", { email_domain: email.split("@")[1] || "unknown" });
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Access members area";
   }
-  track("portal_signin_success", { email_domain: email.split("@")[1] || "unknown" });
-  showAuthMessage("Access granted. Loading members area...");
 }
 
 async function handleSetPassword(event) {
