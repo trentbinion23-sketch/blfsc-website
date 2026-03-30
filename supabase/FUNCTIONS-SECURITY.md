@@ -36,4 +36,4 @@ Optional but recommended:
 - **`order-notify`**: the caller must be an **approved member**. The function loads the order with the user-scoped Supabase client so only the **order owner** can trigger a confirmation email for that `order_id`.
 - Function-level rate limits are applied per user and client IP (including `order-notify`: 24 calls per hour per user + IP).
 - Rate limiting is persisted in Postgres via `consume_edge_rate_limit` RPC, so limits hold across function instances.
-- If the rate-limit RPC is unavailable, `order-notify` fails closed; other functions may fail closed as implemented in each handler.
+- If the rate-limit RPC is unavailable, current handlers log the error and continue (fail open) as implemented in each function.

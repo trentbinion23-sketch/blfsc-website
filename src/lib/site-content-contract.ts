@@ -451,15 +451,16 @@ export const siteContentDefaults: SiteContent = {
   },
   merchPage: {
     heroEyebrow: "Members only",
-    heroTitle: "BLFSC merch stays with the members.",
+    heroTitle: "BLFSC Merch",
     heroDescription:
-      "The range is part of the club. Approved members sign in for the full catalogue, sizes, and ordering.",
+      "Official BLFSC merch for members is available through our private member store. Public supporter merch will be available in the future.",
     categories: ["Tees", "Hoodies", "Pants", "Headwear", "Accessories"],
     primaryLabel: "Member sign-in",
     secondaryLabel: "Ask about access",
-    featureEyebrow: "Secure ordering",
-    featureTitle: "See the line. Order through the portal.",
-    featureDescription: "You can see the range here. Members handle the buying through the portal.",
+    featureEyebrow: "Secure checkout",
+    featureTitle: "Shop official BLFSC merch with secure online checkout.",
+    featureDescription:
+      "Members sign in, add to cart, and pay securely through Shopify Checkout. No card details are stored on our site.",
     featuredHeading: {
       eyebrow: "Featured range",
       title: "A look at the current line.",
@@ -468,11 +469,11 @@ export const siteContentDefaults: SiteContent = {
     accessHeading: {
       eyebrow: "Merch access",
       title: "Getting merch.",
-      description: "See the range, sign in if you have access, and order inside the portal.",
+      description: "See the range, sign in if you have access, and pay securely through the portal.",
     },
     accessNotes: [
       "The range shows the style and the core pieces members can get.",
-      "Approved members sign in for the full catalogue, sizes, and live order list.",
+      "Approved members sign in for the full catalogue, sizes, and secure online checkout.",
       "Need access or a stock answer? Contact the club and we will sort it out.",
     ],
   },

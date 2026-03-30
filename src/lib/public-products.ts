@@ -1,7 +1,7 @@
 import type { Product } from "@/lib/types";
 import { normalizeSiteImagePath } from "@/lib/media";
 import { categoryLabel, inferCategory } from "@/lib/portal/products";
-import { supabaseAnonKey, supabaseUrl } from "@/lib/site-config";
+import { supabaseAnonKey, supabaseUrl, shopifyStoreDomain, shopifyStorefrontToken } from "@/lib/site-config";
 
 type ProductRow = {
   id?: number | string | null;
@@ -55,7 +55,76 @@ function normalizePublicProduct(row: ProductRow): Product | null {
   };
 }
 
-export async function getPublicProducts() {
+// ---------------------------------------------------------------------------
+// Shopify Storefront API product fetch (preferred when configured)
+// ---------------------------------------------------------------------------
+
+type ShopifyProductNode = {
+  id: string;
+  title: string;
+  description: string;
+  productType: string;
+  handle: string;
+  availableForSale: boolean;
+  images: { edges: Array<{ node: { url: string; altText: string | null } }> };
+};
+
+type ShopifyProductsResponse = {
+  data?: {
+    products: { edges: Array<{ node: ShopifyProductNode }> };
+  };
+  errors?: Array<{ message: string }>;
+};
+
+async function getShopifyPublicProducts(): Promise<Product[]> {
+  if (!shopifyStoreDomain || !shopifyStorefrontToken) return [];
+
+  const query = `query { products(first: 50, sortKey: CREATED_AT, reverse: true) { edges { node { id title description productType handle availableForSale images(first: 1) { edges { node { url altText } } } } } } }`;
+
+  const response = await fetch(
+    `https://${shopifyStoreDomain}/api/2025-01/graphql.json`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": shopifyStorefrontToken,
+      },
+      body: JSON.stringify({ query }),
+      next: { revalidate: publicProductsRevalidateSeconds },
+    },
+  );
+
+  if (!response.ok) return [];
+
+  const result = (await response.json()) as ShopifyProductsResponse;
+  if (result.errors?.length) return [];
+
+  return (result.data?.products.edges ?? [])
+    .filter((e) => e.node.availableForSale)
+    .map((e) => {
+      const node = e.node;
+      const image = node.images.edges[0]?.node.url || productFallbackImage;
+      const name = node.title || "Merch item";
+      const numericId = node.id.match(/(\d+)$/)?.[1] || node.handle;
+
+      return {
+        id: numericId,
+        slug: node.handle || slugify(name),
+        name,
+        category: categoryLabel(node.productType?.toLowerCase() || "other"),
+        excerpt: excerptFromText(node.description),
+        description: node.description || "Official BLFSC members merch item.",
+        image,
+        featured: true,
+      };
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Supabase product fetch (fallback)
+// ---------------------------------------------------------------------------
+
+async function getSupabasePublicProducts(): Promise<Product[]> {
   try {
     const url = new URL("/rest/v1/products", `${supabaseUrl}/`);
     url.searchParams.set("select", "id,name,category,description,desc,image_url,image");
@@ -81,4 +150,20 @@ export async function getPublicProducts() {
   } catch {
     return [] as Product[];
   }
+}
+
+// ---------------------------------------------------------------------------
+// Public export: tries Shopify first, falls back to Supabase
+// ---------------------------------------------------------------------------
+
+export async function getPublicProducts(): Promise<Product[]> {
+  if (shopifyStoreDomain && shopifyStorefrontToken) {
+    try {
+      const products = await getShopifyPublicProducts();
+      if (products.length > 0) return products;
+    } catch {
+      // fall through to Supabase
+    }
+  }
+  return getSupabasePublicProducts();
 }

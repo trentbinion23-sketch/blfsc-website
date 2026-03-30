@@ -6,6 +6,8 @@ import {
   posthogHost as POSTHOG_HOST,
   posthogKey as POSTHOG_KEY,
   publicSiteUrl as PUBLIC_SITE_URL,
+  shopifyStoreDomain as SHOPIFY_DOMAIN,
+  shopifyStorefrontToken as SHOPIFY_STOREFRONT_TOKEN,
   supabaseAnonKey as SAFE_SUPABASE_ANON_KEY,
   supabaseUrl as SUPABASE_URL,
 } from "@/lib/site-config";
@@ -68,14 +70,18 @@ const CHAT_LIMIT = 60;
 const CHAT_REFRESH_MS = 15000;
 const CHAT_GROUP_WINDOW_MS = 5 * 60 * 1000;
 const ORDER_STATUS_OPTIONS = [
+  { value: "awaiting_payment", label: "Awaiting Payment" },
+  { value: "paid", label: "Paid" },
   { value: "submitted", label: "Submitted" },
   { value: "processing", label: "Processing" },
   { value: "ready_for_pickup", label: "Ready for pickup" },
   { value: "shipped", label: "Shipped" },
+  { value: "fulfilled", label: "Fulfilled" },
   { value: "cancelled", label: "Cancelled" },
+  { value: "refunded", label: "Refunded" },
 ];
 const ADMIN_LOCKED_MESSAGE =
-  "Admin tools are locked for this account. If this should be the BLFSC admin login, sign out, refresh the portal, and sign back in so the latest permissions load.";
+  "Admin tools are locked on this login. Sign out, refresh the page, and sign back in if you use the site owner account.";
 
 const ADMIN_JUMP_TARGET_TO_SECTION = {
   "admin-overview": "overview",
@@ -376,35 +382,46 @@ function clearAuthMessage() {
   els.authMessage.className = "portal-alert hidden";
 }
 
-/** Maps network/CORS-style failures to something actionable (raw message is often "Failed to fetch"). */
-function formatSignInError(error) {
-  const raw = String(error?.message || error || "");
-  const lower = raw.toLowerCase();
-  const blocked =
-    lower.includes("failed to fetch") ||
-    lower.includes("networkerror") ||
-    lower.includes("network request failed") ||
-    lower.includes("load failed") ||
-    error?.name === "AuthRetryableFetchError";
-  if (blocked) {
-    let altOrigin = "";
-    try {
-      const canon = new URL(PUBLIC_SITE_URL);
-      const altHost = canon.host.startsWith("www.")
-        ? canon.host.replace(/^www\./, "")
-        : `www.${canon.host}`;
-      altOrigin = `${canon.protocol}//${altHost}`;
-    } catch {
-      altOrigin = "the other hostname (www vs non-www)";
-    }
-    return (
-      "Could not reach the sign-in service (request blocked or network error). " +
-      `Try signing in from ${altOrigin}/portal if you are on the opposite hostname, pause VPN or strict privacy/ad blockers, ` +
-      "and in Supabase → Project Settings → API allow requests from your live site origins (both www and non-www). " +
-      "If it still fails, contact the club."
-    );
+/** Maps Supabase Auth errors to short portal copy; keeps raw messages for logging/analytics elsewhere. */
+function userFacingSignInError(error) {
+  const msg = String(error?.message || "").toLowerCase();
+  const status = error?.status;
+  if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
+    return "That email or password does not match our records. Try again or reset your password.";
   }
-  return raw || "Sign-in failed.";
+  if (msg.includes("email not confirmed")) {
+    return "Confirm your email from the link we sent, then try signing in again.";
+  }
+  if (msg.includes("too many requests") || msg.includes("rate limit") || status === 429) {
+    return "Too many sign-in attempts. Wait a minute and try again.";
+  }
+  if (
+    msg.includes("network") ||
+    msg.includes("fetch") ||
+    msg.includes("failed to fetch") ||
+    msg.includes("load failed")
+  ) {
+    return "We could not reach the server. Check your connection and try again.";
+  }
+  return "Could not sign in. Check your email and password, then try again.";
+}
+
+function formatBootstrapNotes(bootstrapResult, bootstrapAdminError) {
+  if (bootstrapAdminError) {
+    return `Admin unlock check failed: ${bootstrapAdminError.message || String(bootstrapAdminError)}`;
+  }
+  if (!bootstrapResult || typeof bootstrapResult !== "object") return "";
+  if (bootstrapResult.skipped && bootstrapResult.reason === "email_not_allowlisted") {
+    const em = bootstrapResult.resolved_email || "?";
+    return `This sign-in email (${em}) is not the allowlisted owner address. Use the exact owner email configured by NEXT_PUBLIC_PORTAL_OWNER_EMAIL and the matching migration allowlist entry.`;
+  }
+  if (bootstrapResult.ok === false && bootstrapResult.detail) {
+    return `Admin unlock: ${bootstrapResult.detail}`;
+  }
+  if (bootstrapResult.ok === false && bootstrapResult.reason === "no_email") {
+    return "This session has no email. Sign out and sign in again with email and password.";
+  }
+  return "";
 }
 
 function setChatStatus(message, isError = false) {
@@ -776,11 +793,13 @@ function orderItemsPayloadSummary(items) {
     .join(", ");
 }
 
-function formatOrderItemsTotal(items) {
-  if (!items || typeof items !== "object") return "—";
+function formatOrderTotal(row) {
+  if (row.total_amount != null && !Number.isNaN(Number(row.total_amount))) {
+    return money(Number(row.total_amount) / 100);
+  }
+  const items = row.items || {};
   const raw = items.total;
-  if (raw == null || Number.isNaN(Number(raw))) return "—";
-  return money(Number(raw));
+  return raw != null && !Number.isNaN(Number(raw)) ? money(Number(raw)) : "—";
 }
 
 function orderStatusSelectOptions(currentRaw) {
@@ -806,6 +825,11 @@ function resetMemberOrdersUI() {
   }
 }
 
+function orderStatusLabel(status) {
+  const found = ORDER_STATUS_OPTIONS.find((o) => o.value === status);
+  return found ? found.label : String(status || "Unknown").replaceAll("_", " ");
+}
+
 function renderMemberOrders() {
   if (!els.memberOrdersList || !els.memberOrdersEmpty) return;
   const rows = state.memberOrders;
@@ -813,7 +837,7 @@ function renderMemberOrders() {
     els.memberOrdersList.innerHTML = "";
     els.memberOrdersList.classList.add("hidden");
     els.memberOrdersEmpty.textContent =
-      "No orders yet. Add items to your cart and submit when you are ready.";
+      "No orders on file yet. New orders are handled through Shopify — check your email for order confirmations.";
     els.memberOrdersEmpty.classList.remove("hidden");
     return;
   }
@@ -822,16 +846,16 @@ function renderMemberOrders() {
   els.memberOrdersList.innerHTML = rows
     .map((row) => {
       const items = row.items || {};
-      const statusLabel = String(row.status || "submitted").replaceAll("_", " ");
+      const label = orderStatusLabel(row.status);
       const when = formatDateTime(row.created_at, "—");
       return `
       <article class="broadcast-item portal-order-item">
         <div class="broadcast-item-head">
           <div>
             <strong>Order #${row.id}</strong>
-            <div class="portal-card-copy portal-card-copy-tight">${escapeHtml(when)} · ${escapeHtml(statusLabel)}</div>
+            <div class="portal-card-copy portal-card-copy-tight">${escapeHtml(when)} · <span class="order-status-badge order-status-${escapeHtml(row.status || "unknown")}">${escapeHtml(label)}</span></div>
           </div>
-          <span class="broadcast-chip">${escapeHtml(formatOrderItemsTotal(items))}</span>
+          <span class="broadcast-chip">${escapeHtml(formatOrderTotal(row))}</span>
         </div>
         <p class="portal-card-copy portal-card-copy-tight">${escapeHtml(orderItemsPayloadSummary(items) || "Details on file.")}</p>
       </article>`;
@@ -843,7 +867,7 @@ async function fetchMemberOrders() {
   if (!state.session || !els.memberOrdersList || !els.memberOrdersEmpty) return;
   const { data, error } = await db
     .from(ORDERS_TABLE)
-    .select("id,status,items,created_at")
+    .select("id,status,items,total_amount,currency,paid_at,created_at")
     .eq("user_id", state.session.user.id)
     .order("created_at", { ascending: false })
     .limit(25);
@@ -915,7 +939,7 @@ function renderAdminOrders() {
             <div class="portal-card-copy portal-card-copy-tight">${escapeHtml(formatDateTime(row.created_at, "—"))} · ${escapeHtml(memberLabel)}</div>
           </div>
         </div>
-        <p class="portal-card-copy portal-card-copy-tight"><strong>${escapeHtml(formatOrderItemsTotal(items))}</strong>${customerRegion ? ` · ${customerRegion}` : ""}</p>
+        <p class="portal-card-copy portal-card-copy-tight"><strong>${escapeHtml(formatOrderTotal(row))}</strong>${customerRegion ? ` · ${customerRegion}` : ""}</p>
         <p class="portal-card-copy portal-card-copy-tight">${escapeHtml(orderItemsPayloadSummary(items) || "No line items.")}</p>
         ${notes ? `<p class="portal-card-copy portal-card-copy-tight">${notes}</p>` : ""}
         <label class="field">
@@ -962,7 +986,7 @@ async function fetchAdminOrders() {
   }
   const { data, error } = await db
     .from(ORDERS_TABLE)
-    .select("id,user_id,status,items,created_at")
+    .select("id,user_id,status,items,total_amount,currency,paid_at,created_at")
     .order("created_at", { ascending: false })
     .limit(150);
   if (error) {
@@ -1007,6 +1031,8 @@ function updateSummary() {
   els.productsCount.textContent = String(state.products.length);
   els.cartBadge.textContent = String(count);
   els.cartBadge.classList.toggle("hidden", count === 0);
+  const payBtn = document.getElementById("pay-now-btn");
+  if (payBtn) payBtn.disabled = count === 0;
 }
 
 function saveCart() {
@@ -1111,8 +1137,18 @@ function renderProducts() {
   els.productGrid.classList.remove("hidden");
 
   visibleProducts.forEach((product) => {
-    const sizesHtml = product.hasSizes
-      ? `
+    let sizesHtml = "";
+    if (product.hasSizes && product.shopifyVariants?.length > 1) {
+      const opts = product.shopifyVariants
+        .map((v) => `<option value="${escapeHtml(v.title)}">${escapeHtml(v.title)}</option>`)
+        .join("");
+      sizesHtml = `
+      <label class="field field-compact" for="${product.fieldId}">
+        <span class="field-label">Size</span>
+        <select id="${product.fieldId}" class="input">${opts}</select>
+      </label>`;
+    } else if (product.hasSizes) {
+      sizesHtml = `
       <label class="field field-compact" for="${product.fieldId}">
         <span class="field-label">Size</span>
         <select id="${product.fieldId}" class="input">
@@ -1125,9 +1161,8 @@ function renderProducts() {
           <option value="4XL">4X-Large (4XL)</option>
           <option value="5XL">5X-Large (5XL)</option>
         </select>
-      </label>
-    `
-      : "";
+      </label>`;
+    }
 
     const card = document.createElement("article");
     card.className = "portal-product-card portal-surface";
@@ -1581,8 +1616,18 @@ function renderAdminProducts() {
   });
 }
 
+function resolveVariantId(product, size) {
+  if (!product.shopifyVariants?.length) return "";
+  if (!size) return product.shopifyVariants[0].id;
+  const match = product.shopifyVariants.find(
+    (v) => v.title.toLowerCase() === size.toLowerCase(),
+  );
+  return match ? match.id : product.shopifyVariants[0].id;
+}
+
 function addToCart(product) {
   const size = product.hasSizes ? document.getElementById(product.fieldId)?.value || "" : "";
+  const variantId = resolveVariantId(product, size);
   const existing = state.cart.find((item) => item.id === product.id && item.size === size);
   if (existing) {
     existing.qty += 1;
@@ -1594,6 +1639,7 @@ function addToCart(product) {
       image: product.displayImage,
       size,
       qty: 1,
+      variantId,
     });
   }
   saveCart();
@@ -1874,10 +1920,6 @@ function fillProfileForm(profile = {}) {
   els.profileEmail.value = profile.email || state.session?.user?.email || "";
   els.profileNotifyEmail.checked = profile.notify_email ?? true;
   els.profileNotifySms.checked = profile.notify_sms ?? false;
-  const orderName = document.getElementById("order-name");
-  const orderPhone = document.getElementById("order-phone");
-  if (orderName && !orderName.value.trim()) orderName.value = els.profileFullName.value;
-  if (orderPhone && !orderPhone.value.trim()) orderPhone.value = els.profilePhone.value;
 }
 
 function renderProfileMeta() {
@@ -2611,12 +2653,75 @@ function resetPortalState() {
   resetMemberOrdersUI();
 }
 
+function gidNumericId(gid) {
+  const match = String(gid || "").match(/(\d+)$/);
+  return match ? Number(match[1]) : 0;
+}
+
+function normalizeShopifyProduct(node) {
+  const firstImage = node.images?.edges?.[0]?.node?.url || "";
+  const variants = (node.variants?.edges || []).map((e) => e.node);
+  const firstVariant = variants[0];
+  const price = firstVariant ? parseFloat(firstVariant.price.amount) : 0;
+  const hasSizes = variants.length > 1;
+  const category = normalizePortalCategory(node.productType || "other") || "other";
+  return {
+    id: gidNumericId(node.id),
+    name: node.title || "Club item",
+    description: node.description || "",
+    desc: node.description || "",
+    category,
+    price,
+    active: node.availableForSale !== false,
+    hasSizes,
+    image_url: firstImage,
+    image: firstImage,
+    displayImage: firstImage || PORTAL_LOGO_URL,
+    displayDescription: node.description || "Official club item.",
+    displayCategory: category,
+    fieldId: productFieldId({ id: gidNumericId(node.id), name: node.title }),
+    shopifyVariants: variants,
+  };
+}
+
+async function fetchShopifyStorefrontProducts() {
+  if (!SHOPIFY_DOMAIN || !SHOPIFY_STOREFRONT_TOKEN) return [];
+  const query = `query { products(first: 50, sortKey: CREATED_AT, reverse: true) { edges { node { id title description productType handle availableForSale images(first: 1) { edges { node { url altText } } } variants(first: 20) { edges { node { id title price { amount currencyCode } availableForSale } } } } } } }`;
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/api/2025-01/graphql.json`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": SHOPIFY_STOREFRONT_TOKEN,
+      },
+      body: JSON.stringify({ query }),
+    },
+  );
+  if (!response.ok) throw new Error(`Shopify API error: ${response.status}`);
+  const result = await response.json();
+  if (result.errors?.length) throw new Error(result.errors[0].message);
+  return (result.data?.products?.edges || []).map((e) => e.node);
+}
+
 async function fetchProducts() {
   if (!state.session) return;
   els.productsLoading.textContent = "Loading merchandise...";
   els.productsLoading.classList.remove("hidden");
   els.productsEmpty.classList.add("hidden");
   els.productGrid.classList.add("hidden");
+
+  if (SHOPIFY_DOMAIN && SHOPIFY_STOREFRONT_TOKEN) {
+    try {
+      const shopifyProducts = await fetchShopifyStorefrontProducts();
+      state.products = shopifyProducts.map(normalizeShopifyProduct);
+      renderProducts();
+      return;
+    } catch (err) {
+      console.error("Shopify product fetch failed, falling back to Supabase:", err);
+    }
+  }
+
   const { data, error } = await db
     .from(PRODUCT_TABLE)
     .select("*")
@@ -2876,21 +2981,12 @@ async function loadMemberProfile() {
   const { data: bootstrapResult, error: bootstrapAdminError } = await db.rpc(
     "ensure_bootstrap_portal_admin",
   );
-  let bootstrapDiagnostic = "";
   if (bootstrapAdminError) {
     console.warn("ensure_bootstrap_portal_admin:", bootstrapAdminError);
-    bootstrapDiagnostic = ` Admin unlock could not run: ${bootstrapAdminError.message || String(bootstrapAdminError)}.`;
   } else if (bootstrapResult && typeof bootstrapResult === "object") {
     console.info("ensure_bootstrap_portal_admin:", bootstrapResult);
-    if (bootstrapResult.skipped && bootstrapResult.reason === "email_not_allowlisted") {
-      bootstrapDiagnostic = ` Admin unlock skipped: database saw sign-in email "${bootstrapResult.resolved_email || "?"}", which is not the allowlisted owner address. Use the exact owner email configured by NEXT_PUBLIC_PORTAL_OWNER_EMAIL (and matching migration allowlist entry).`;
-    } else if (bootstrapResult.ok === false && bootstrapResult.detail) {
-      bootstrapDiagnostic = ` Admin unlock failed: ${bootstrapResult.detail}`;
-    } else if (bootstrapResult.ok === false && bootstrapResult.reason === "no_email") {
-      bootstrapDiagnostic =
-        " Admin unlock failed: no email on this session (JWT/auth.users). Try signing out and signing in with email/password.";
-    }
   }
+  const bootstrapNote = formatBootstrapNotes(bootstrapResult, bootstrapAdminError);
 
   let result = await db
     .from(PROFILE_TABLE)
@@ -2966,7 +3062,7 @@ async function loadMemberProfile() {
   const profileEmailNorm = String(result.data?.email || "")
     .trim()
     .toLowerCase();
-  let selfPromoteDiagnostic = "";
+  let selfPromoteNote = "";
   if (
     result.data &&
     !coerceMemberIsAdmin(result.data.is_admin) &&
@@ -2979,7 +3075,7 @@ async function loadMemberProfile() {
       .eq("user_id", state.session.user.id);
     if (promoteErr) {
       console.warn("portal owner self-promote:", promoteErr);
-      selfPromoteDiagnostic = ` Could not unlock admin via profile update: ${promoteErr.message || String(promoteErr)}.`;
+      selfPromoteNote = `Could not save admin access: ${promoteErr.message || String(promoteErr)}.`;
     } else {
       const promoted = await db
         .from(PROFILE_TABLE)
@@ -3016,7 +3112,7 @@ async function loadMemberProfile() {
     setAdminAccessBanner("");
   } else {
     setAdminAccessBanner(
-      [ADMIN_LOCKED_MESSAGE, bootstrapDiagnostic, selfPromoteDiagnostic].filter(Boolean).join(""),
+      [ADMIN_LOCKED_MESSAGE, bootstrapNote, selfPromoteNote].filter(Boolean).join(" "),
     );
   }
   if (state.profile.is_admin) {
@@ -3029,13 +3125,19 @@ async function loadMemberProfile() {
     resetInviteState();
     resetSiteContentState();
   }
-  const profileStatusError =
-    Boolean(bootstrapDiagnostic && !state.profile.is_admin) ||
-    Boolean(selfPromoteDiagnostic && !state.profile.is_admin);
-  setProfileStatus(
-    `${state.profile.approved ? "Approved member access is active." : "Your profile is waiting for approval."}${state.profile.is_admin ? " Admin tools are enabled on your account." : " Admin tools are locked for this account. Sign out, refresh, and sign back in if this should be the BLFSC admin login."}${bootstrapDiagnostic}${selfPromoteDiagnostic}`,
-    profileStatusError,
-  );
+  const baseApproval = state.profile.approved
+    ? "Approved member access is active."
+    : "Your profile is waiting for approval.";
+  const detailForNonAdmin = [bootstrapNote, selfPromoteNote].filter(Boolean).join(" ");
+  const profileStatusError = Boolean(detailForNonAdmin && !state.profile.is_admin);
+  if (state.profile.is_admin) {
+    setProfileStatus(`${baseApproval} Admin tools are enabled on your account.`);
+  } else {
+    setProfileStatus(
+      detailForNonAdmin ? `${baseApproval} ${detailForNonAdmin}` : baseApproval,
+      profileStatusError,
+    );
+  }
   if (state.profile.full_name) {
     els.chatDisplayName.value = loadDisplayName();
   }
@@ -3230,21 +3332,23 @@ async function handleSignIn(event) {
   event.preventDefault();
   clearAuthMessage();
   const btn = document.getElementById("signin-btn");
-  btn.disabled = true;
-  btn.textContent = "Signing in...";
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
   syncPasswordUsername(email);
-  const { error } = await db.auth.signInWithPassword({ email, password });
-  btn.disabled = false;
-  btn.textContent = "Access members area";
-  if (error) {
-    track("portal_signin_failed", { reason: error.message || "unknown" });
-    showAuthMessage(formatSignInError(error), true);
-    return;
+  btn.disabled = true;
+  btn.textContent = "Signing in...";
+  try {
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) {
+      track("portal_signin_failed", { reason: error.message || "unknown" });
+      showAuthMessage(userFacingSignInError(error), true);
+      return;
+    }
+    track("portal_signin_success", { email_domain: email.split("@")[1] || "unknown" });
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Access members area";
   }
-  track("portal_signin_success", { email_domain: email.split("@")[1] || "unknown" });
-  showAuthMessage("Access granted. Loading members area...");
 }
 
 async function handleSetPassword(event) {
@@ -3349,62 +3453,78 @@ async function invokeOrderNotify(orderId) {
   }
 }
 
-async function handleSubmitOrder(event) {
-  event.preventDefault();
-  if (!state.session) return showToast("You must be signed in.", true);
-  if (!state.cart.length) return showToast("Your order is empty.", true);
-  const customerName = document.getElementById("order-name").value.trim();
-  if (!customerName) return showToast("Add your name before submitting the order.", true);
-  const btn = document.getElementById("submit-order-btn");
-  btn.disabled = true;
-  btn.textContent = "Submitting...";
-  const payload = {
-    user_id: state.session.user.id,
-    status: "submitted",
-    items: {
-      member_email: state.session.user.email || "",
-      customer_name: customerName,
-      customer_phone: document.getElementById("order-phone").value.trim(),
-      state: document.getElementById("order-state").value,
-      notes: document.getElementById("order-notes").value.trim(),
-      total: getCartTotal(),
-      line_items: state.cart,
+function setCheckoutStatus(message, isError) {
+  const el = document.getElementById("checkout-status");
+  if (!el) return;
+  el.textContent = message;
+  el.className = `checkout-status${isError ? " is-error" : ""}`;
+  el.classList.remove("hidden");
+}
+
+async function createShopifyCartAndRedirect(cartItems) {
+  if (!SHOPIFY_DOMAIN || !SHOPIFY_STOREFRONT_TOKEN) {
+    throw new Error("Shopify is not configured. Contact the club admin.");
+  }
+  const lines = cartItems
+    .filter((item) => item.variantId)
+    .map((item) => ({ merchandiseId: item.variantId, quantity: item.qty }));
+  if (!lines.length) {
+    throw new Error("No valid Shopify products in cart. Products may need variant IDs.");
+  }
+  const mutation = `mutation cartCreate($input: CartInput!) { cartCreate(input: $input) { cart { id checkoutUrl } userErrors { field message } } }`;
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/api/2025-01/graphql.json`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": SHOPIFY_STOREFRONT_TOKEN,
+      },
+      body: JSON.stringify({
+        query: mutation,
+        variables: { input: { lines } },
+      }),
     },
-  };
-  const { data: inserted, error } = await db
-    .from(ORDERS_TABLE)
-    .insert([payload])
-    .select("id,created_at")
-    .single();
-  btn.disabled = false;
-  btn.textContent = "Submit order";
-  if (error) {
-    console.error(error);
-    track("portal_order_submit_failed", { reason: error.message || "unknown" });
-    return showToast(error.message || "Could not submit order.", true);
+  );
+  if (!response.ok) throw new Error(`Shopify API error: ${response.status}`);
+  const result = await response.json();
+  if (result.errors?.length) throw new Error(result.errors[0].message);
+  const cartCreate = result.data?.cartCreate;
+  if (cartCreate?.userErrors?.length) throw new Error(cartCreate.userErrors[0].message);
+  const checkoutUrl = cartCreate?.cart?.checkoutUrl;
+  if (!checkoutUrl) throw new Error("Shopify did not return a checkout URL.");
+  return checkoutUrl;
+}
+
+async function handleCheckout() {
+  if (!state.session) return showToast("You must be signed in.", true);
+  if (!state.cart.length) return showToast("Your cart is empty.", true);
+  const btn = document.getElementById("pay-now-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Redirecting…";
   }
-  state.cart = [];
-  saveCart();
-  renderCart();
-  closeCart();
-  document.getElementById("order-form").reset();
-  if (state.profile?.full_name)
-    document.getElementById("order-name").value = state.profile.full_name;
-  if (state.profile?.phone) document.getElementById("order-phone").value = state.profile.phone;
-  track("portal_order_submitted", {
-    order_id: inserted?.id,
-    item_count: payload.items.line_items.length,
-    total: payload.items.total,
-  });
-  await fetchMemberOrders();
-  if (state.profile?.is_admin) {
-    await fetchAdminOrders();
+  setCheckoutStatus("Preparing Shopify checkout…", false);
+  try {
+    const checkoutUrl = await createShopifyCartAndRedirect(state.cart);
+    track("portal_checkout_started", {
+      item_count: state.cart.length,
+      total: getCartTotal(),
+    });
+    state.cart = [];
+    saveCart();
+    window.location.href = checkoutUrl;
+  } catch (err) {
+    console.error("Checkout error:", err);
+    const message = err instanceof Error ? err.message : "Could not start checkout.";
+    setCheckoutStatus(message, true);
+    showToast(message, true);
+    track("portal_checkout_failed", { reason: message });
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Pay Now";
+    }
   }
-  if (inserted?.id != null) {
-    await invokeOrderNotify(inserted.id);
-  }
-  const orderLabel = inserted?.id != null ? `Order #${inserted.id} submitted.` : "Order submitted.";
-  showToast(orderLabel);
 }
 
 async function handleChatSubmit(event) {
@@ -3855,7 +3975,7 @@ function initReveal() {
 
 document.getElementById("signin-form").addEventListener("submit", handleSignIn);
 document.getElementById("set-password-form").addEventListener("submit", handleSetPassword);
-document.getElementById("order-form").addEventListener("submit", handleSubmitOrder);
+document.getElementById("pay-now-btn")?.addEventListener("click", handleCheckout);
 els.profileForm.addEventListener("submit", handleProfileSave);
 els.merchAdminForm.addEventListener("submit", handleMerchAdminSave);
 els.broadcastForm.addEventListener("submit", handleBroadcastSubmit);
@@ -3963,9 +4083,44 @@ db.auth.onAuthStateChange((_event, session) => {
   setAuthedUI(session);
 });
 
+function handleCheckoutReturnParams() {
+  const params = new URLSearchParams(window.location.search);
+  const checkout = params.get("checkout");
+  const orderId = params.get("order_id");
+  if (!checkout) return;
+
+  const returnEl = document.getElementById("checkout-return-message");
+  if (checkout === "success" && orderId) {
+    const msg = `Payment received for order #${escapeHtml(orderId)}. Thank you! Your order status will update shortly.`;
+    if (returnEl) {
+      returnEl.innerHTML = `<div class="checkout-success">${msg}</div>`;
+      returnEl.classList.remove("hidden");
+    }
+    showToast(`Order #${orderId} payment received.`);
+    track("portal_checkout_success", { order_id: orderId });
+  } else if (checkout === "cancelled") {
+    const msg = orderId
+      ? `Payment was cancelled for order #${escapeHtml(orderId)}. You can retry from your order history.`
+      : "Payment was cancelled. You can try again from your cart.";
+    if (returnEl) {
+      returnEl.innerHTML = `<div class="checkout-cancelled">${msg}</div>`;
+      returnEl.classList.remove("hidden");
+    }
+    showToast("Payment cancelled.");
+    track("portal_checkout_cancelled", { order_id: orderId || "unknown" });
+  }
+
+  const cleanUrl = new URL(window.location.href);
+  cleanUrl.searchParams.delete("checkout");
+  cleanUrl.searchParams.delete("order_id");
+  cleanUrl.searchParams.delete("session_id");
+  window.history.replaceState({}, "", cleanUrl.toString());
+}
+
 (async function init() {
   loadPosthogClient();
   initReveal();
+  handleCheckoutReturnParams();
   track("portal_page_opened", { path: window.location.pathname });
   resetPortalState();
   resetProfileState();
