@@ -40,6 +40,15 @@ export function buildSiteUrl(path = "/") {
   return new URL(path, `${publicSiteUrl}/`).toString();
 }
 
+export const shopifyStoreDomain = readEnv(
+  process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN,
+  "",
+);
+export const shopifyStorefrontToken = readEnv(
+  process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN,
+  "",
+);
+
 /** Must match portal_bootstrap_owner_email_normalized() in Supabase migrations. */
 export const portalOwnerEmailNormalized = readEnv(
   process.env.NEXT_PUBLIC_PORTAL_OWNER_EMAIL,

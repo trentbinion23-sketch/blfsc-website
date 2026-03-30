@@ -26,6 +26,7 @@ const connectSrcParts = [
   "https://*.posthog.com",
   "https://*.sentry.io",
   "https://challenges.cloudflare.com",
+  "https://*.myshopify.com",
 ];
 const scriptSrcParts = [
   "'self'",
@@ -51,7 +52,7 @@ const cspPolicy = [
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'self'",
-  "img-src 'self' data: blob: https:",
+  "img-src 'self' data: blob: https: https://cdn.shopify.com",
   "font-src 'self' data:",
   `connect-src ${connectSrcParts.join(" ")}`,
   `script-src ${scriptSrcParts.join(" ")}`,

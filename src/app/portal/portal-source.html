@@ -238,7 +238,8 @@
                     <h3 class="brand-font">Recent orders</h3>
                   </div>
                   <p class="portal-card-copy portal-card-copy-tight">
-                    Submissions stay on your account so you can track club fulfillment status.
+                    Past portal orders are shown below. New orders are processed through
+                    Shopify — check your email for order confirmations and tracking.
                   </p>
                   <button
                     id="refresh-member-orders-btn"
@@ -253,68 +254,15 @@
 
                 <section class="portal-card portal-surface" data-reveal>
                   <div class="portal-card-head">
-                    <p class="eyebrow">Order details</p>
-                    <h3 class="brand-font">Submit an order</h3>
+                    <p class="eyebrow">Checkout</p>
+                    <h3 class="brand-font">How it works</h3>
                   </div>
-                  <form id="order-form" class="stack-form">
-                    <label class="field" for="order-name">
-                      <span class="field-label">Your name</span>
-                      <input
-                        id="order-name"
-                        name="order-name"
-                        class="input"
-                        type="text"
-                        placeholder="Your name"
-                        required
-                      />
-                    </label>
-                    <label class="field" for="order-phone">
-                      <span class="field-label">Phone</span>
-                      <input
-                        id="order-phone"
-                        name="order-phone"
-                        class="input"
-                        type="tel"
-                        autocomplete="tel"
-                        placeholder="Phone number"
-                      />
-                    </label>
-                    <label class="field" for="order-state">
-                      <span class="field-label">State</span>
-                      <select id="order-state" name="order-state" class="input">
-                        <option value="SA" selected>SA</option>
-                        <option value="VIC">VIC</option>
-                        <option value="NSW">NSW</option>
-                        <option value="QLD">QLD</option>
-                        <option value="WA">WA</option>
-                        <option value="TAS">TAS</option>
-                        <option value="NT">NT</option>
-                        <option value="ACT">ACT</option>
-                        <option value="OTHER">Other</option>
-                      </select>
-                    </label>
-                    <label class="field" for="order-notes">
-                      <span class="field-label">Notes</span>
-                      <textarea
-                        id="order-notes"
-                        name="order-notes"
-                        class="input textarea"
-                        placeholder="Pickup, delivery, or other notes"
-                      ></textarea>
-                    </label>
-                    <button
-                      id="submit-order-btn"
-                      class="button button-primary button-full"
-                      type="submit"
-                    >
-                      Submit order
-                    </button>
-                    <p class="portal-card-copy portal-card-copy-tight">
-                      Orders are saved to your member account so the club can confirm sizing,
-                      pickup, and delivery details. When email is configured, you will receive a
-                      confirmation at your sign-in address after submit.
-                    </p>
-                  </form>
+                  <p class="portal-card-copy portal-card-copy-tight">
+                    Add items to your cart and click <strong>Pay Now</strong>.
+                    You will be redirected to Shopify for secure checkout where shipping,
+                    taxes, and payment are all handled. Order confirmations go to your email.
+                  </p>
+                  <div id="checkout-return-message" class="checkout-return-message hidden"></div>
                 </section>
               </aside>
             </div>
@@ -1397,7 +1345,7 @@
                 <p class="eyebrow">Order review</p>
                 <h3 id="cart-title" class="brand-font">Your cart</h3>
                 <p class="portal-card-copy portal-card-copy-tight">
-                  Review quantities, sizes, and totals before submitting.
+                  Review quantities, sizes, and totals before checkout.
                 </p>
               </div>
               <button id="close-cart" class="button button-secondary" type="button">Close</button>
@@ -1406,9 +1354,23 @@
             <div id="cart-items" class="cart-items"></div>
 
             <div class="cart-total-box">
-              <span>Total</span>
-              <strong id="cart-total">$0.00</strong>
+              <div class="cart-line cart-line-total"><span>Subtotal</span><strong id="cart-total">$0.00</strong></div>
+              <div class="cart-line"><span>Shipping &amp; taxes</span><span class="cart-note-muted">calculated at checkout</span></div>
             </div>
+
+            <div id="checkout-status" class="checkout-status hidden"></div>
+
+            <button
+              id="pay-now-btn"
+              class="button button-primary button-full"
+              type="button"
+              disabled
+            >
+              Pay Now
+            </button>
+            <p class="portal-card-copy portal-card-copy-tight cart-checkout-note">
+              You will be redirected to Shopify for secure payment.
+            </p>
           </div>
         </aside>
 
