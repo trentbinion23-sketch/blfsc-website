@@ -2,6 +2,7 @@ import type { Product } from "@/lib/types";
 import { normalizeSiteImagePath } from "@/lib/media";
 import { categoryLabel, inferCategory } from "@/lib/portal/products";
 import { supabaseAnonKey, supabaseUrl } from "@/lib/site-config";
+import { getShopifyProducts, isShopifyConfigured } from "@/lib/shopify";
 
 type ProductRow = {
   id?: number | string | null;
@@ -56,6 +57,10 @@ function normalizePublicProduct(row: ProductRow): Product | null {
 }
 
 export async function getPublicProducts() {
+  if (isShopifyConfigured()) {
+    return getShopifyProducts();
+  }
+
   try {
     const url = new URL("/rest/v1/products", `${supabaseUrl}/`);
     url.searchParams.set("select", "id,name,category,description,desc,image_url,image");
