@@ -33,6 +33,51 @@ export function Hero({ eyebrow, title, description, actions, aside }: HeroProps)
               priority
             />
             <div className="image-panel-overlay absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(45,109,246,0.26),transparent_38%),linear-gradient(135deg,rgba(4,9,20,0.9),rgba(7,14,26,0.7))]" />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-75"
+            >
+              <svg
+                viewBox="0 0 1000 1000"
+                className="h-[88%] w-[88%] max-h-[760px] max-w-[760px]"
+                role="presentation"
+              >
+                <defs>
+                  <path id="hero-ring-top" d="M 500,500 m -360,0 a 360,360 0 1,1 720,0" />
+                  <path id="hero-ring-bottom" d="M 500,500 m -360,0 a 360,360 0 1,0 720,0" />
+                </defs>
+                <text
+                  fill="rgba(255,255,255,0.92)"
+                  stroke="rgba(8,14,28,0.48)"
+                  strokeWidth="10"
+                  paintOrder="stroke"
+                  letterSpacing="8"
+                  fontSize="86"
+                  fontWeight="900"
+                  textAnchor="middle"
+                  style={{ fontFamily: "system-ui, sans-serif" }}
+                >
+                  <textPath href="#hero-ring-top" startOffset="50%">
+                    B.L.F SOCIAL CLUB
+                  </textPath>
+                </text>
+                <text
+                  fill="rgba(255,255,255,0.92)"
+                  stroke="rgba(8,14,28,0.48)"
+                  strokeWidth="10"
+                  paintOrder="stroke"
+                  letterSpacing="8"
+                  fontSize="86"
+                  fontWeight="900"
+                  textAnchor="middle"
+                  style={{ fontFamily: "system-ui, sans-serif" }}
+                >
+                  <textPath href="#hero-ring-bottom" startOffset="50%">
+                    SOUTH AUSTRALIA
+                  </textPath>
+                </text>
+              </svg>
+            </div>
           </div>
           <div className="relative max-w-2xl space-y-6">
             <p className="eyebrow text-[var(--sand)]">{eyebrow}</p>
